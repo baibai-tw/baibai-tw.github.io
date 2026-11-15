@@ -21,7 +21,7 @@ papers: [
   {id:'xiaoyin', name:'小銀', alias:'', tl:'sió-gîn', ok:true, cat:'銀紙', use:'往生者、好兄弟、普渡、地基主', note:''},
   {id:'kuqian', name:'庫錢', alias:'', tl:'khòo-tsînn', ok:true, cat:'喪葬', use:'喪事、還庫', note:''},
   {id:'wangsheng', name:'往生錢', alias:'', tl:'', cat:'喪葬', use:'喪事、超渡', note:'印有往生咒'},
-  {id:'jingyi', name:'經衣', alias:'更衣', tl:'', cat:'配件', use:'好兄弟、普渡、地基主', note:''},
+  {id:'jingyi', name:'經衣', alias:'更衣、巾衣', tl:'', cat:'配件', use:'好兄弟、普渡、地基主', note:''},
   {id:'caishen', name:'五路財神金', alias:'財神金', tl:'', cat:'神明金', use:'正月初五迎財神、開工開市', note:'商家迎財神常與壽金、刈金一起準備'},
   {id:'jiama', name:'甲馬', alias:'', tl:'kah-bé', ok:true, cat:'配件', use:'迎神、送神、犒軍', note:''},
   {id:'gaoqian', name:'高錢', alias:'', tl:'', cat:'配件', use:'拜天公時掛在甘蔗上', note:''},
@@ -104,6 +104,25 @@ occasions: [
 
 roles: {home:'一般家庭', fisher:'討海人（漁民）', farmer:'作穡人（農民）', shop:'做生意（商家）', factory:'工廠'},
 
+temples: [
+  {id:'mazu', name:'媽祖廟', who:'媽祖（天上聖母）', paper:'大箔壽金、壽金、刈金、福金（四色金）', offer:'紅湯圓、麵線、發糕、紅龜粿、鮮花（成對，不用假花）、清茶三杯', extra:'農曆三月廿三媽祖生'},
+  {id:'caishen', name:'財神廟', who:'五路財神、文武財神', paper:'壽金、刈金、福金、五路財神金', offer:'糖果、餅乾等甜食，水果三或五樣', extra:'民間說法：避開蓮霧（空心）與「酥」類點心；拜武財神不用豬肉'},
+  {id:'tudi', name:'土地公廟', who:'福德正神', paper:'壽金、刈金、福金（三色金）', offer:'發糕、麻糬、刈包、潤餅；水果可選香蕉、李子、鳳梨（招你旺）', extra:'初二、十六做牙；二月初二頭牙、十二月十六尾牙最熱鬧'},
+  {id:'dazhong', name:'大眾爺廟', who:'大眾爺', paper:'三色金（壽金、刈金、福金）、小銀、經衣（巾衣）', extra:'各地拜法略有差異，也可先請教廟方'},
+  {id:'yuelao', name:'月老（求姻緣）', who:'月下老人', paper:'許多月老廟備有月老金（姻緣金）可現場購買；自備金紙歡迎到店詢問', offer:'糖果、巧克力等甜食，冰糖、帶殼龍眼乾、紅棗、桂圓、鮮花；數量以雙數為宜', extra:'民間說法：拜月老不帶傘（諧音「散」）、不戴帽子。先拜天公與主神，再拜月老'}
+],
+nearby: [
+  ['金山廣安宮', 0.1, '開漳聖王', '', 'ChIJO1sDwldLXTQRyMx8yHTU55g'],
+  ['金包里慈護宮', 0.4, '媽祖', 'mazu', 'ChIJ_xrGQ12zQjQRvRtteX0gvR0'],
+  ['福德宮（民生路）', 0.8, '土地公', 'tudi', 'ChIJgy6hhy5LXTQR06eawE8ZZME'],
+  ['金山承天宮', 0.8, '國姓爺（鄭成功）', '', 'ChIJ1w0I8FtLXTQRsiTf3hw7f6o'],
+  ['福德宮（磺港漁港）', 1.5, '土地公', 'tudi', 'ChIJX8BK7kJLXTQRdhbw3wOlahw'],
+  ['金山財神廟', 2.1, '五路財神', 'caishen', 'ChIJV_n6FEuzQjQRaWI4M7gjCvM'],
+  ['萬里情月老廟', 2.2, '月下老人', 'yuelao', 'ChIJ92enEEuzQjQRTN5HLGdkq5M'],
+  ['三和福德宮', 2.9, '土地公', 'tudi', 'ChIJxz9438OzQjQR5mVFqcpBiGg']
+],
+templeTip: '到廟裡拜拜，先拜天公爐再拜主神；有些廟宇集中焚化或不燒金紙，請依廟方規定。',
+
 fire: {
   trad: '開工、喜慶傳統上使用紅紙鞭炮，可向店內詢問。請依各地法規及燃放時段規定。',
   eco: '一般祭祀如需燃放鞭炮，建議使用環保鞭炮，並依各地法規及燃放時段規定。'
@@ -131,6 +150,12 @@ sources: [
   ['新頭殼：金包里二媽回野柳媽祖洞','https://newtalk.tw/news/view/2022-05-16/755679'],
   ['聯合新聞網：神農大帝聖誕','https://udn.com/news/story/7268/9559983'],
   ['Yahoo 新聞：水仙尊王','https://tw.news.yahoo.com/tag/水仙尊王'],
+  ['TVBS：拜土地公供品與金紙','https://health.tvbs.com.tw/life/352227'],
+  ['蝦皮生活誌：拜土地公三色金','https://shopee.tw/blog/land-worship/'],
+  ['蕃薯藤旅遊：拜財神供品','https://travel.yam.com/article/136653'],
+  ['TVBS：財神廟參拜','https://health.tvbs.com.tw/nutrition/360367'],
+  ['NOWnews：拜月老步驟','https://www.nownews.com/news/6786362'],
+  ['關鍵評論網：七夕拜月老供品','https://www.thenewslens.com/article/190536'],
   ['關鍵評論網：紙錢整理','https://www.thenewslens.com/article/147154']
 ]
 };

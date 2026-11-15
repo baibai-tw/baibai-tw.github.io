@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>農曆節日與特殊祭祀｜拜拜要準備什麼金紙</title>
+<meta name="description" content="以農曆為主的祭祀日曆：初一十五、做牙、天公生、清明、中元普渡、冬至、尾牙、除夕，以及結婚、入厝、做七等婚喪喜慶的金紙準備參考。">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/"><span class="seal">香</span><span class="t">拜拜</span></a>
+  <nav><a href="/jieri/" aria-current="page">節日祭祀</a><a href="/mingcheng/">金紙名稱</a></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="page-head">
+    <h1>農曆節日與特殊祭祀</h1>
+    <p>點日曆上的日子，看當天要拜誰、準備哪些金紙。點金紙名稱可以看說明。</p>
+  </div>
+
+  <section id="calendar">
+    <h2>農曆祭祀日曆</h2>
+    <div class="card">
+      <div class="cal-bar">
+        <h3 id="calTitle"></h3>
+        <button class="btn" id="prev" aria-label="上個月">‹</button>
+        <button class="btn" id="todayBtn">今天</button>
+        <button class="btn" id="next" aria-label="下個月">›</button>
+      </div>
+      <div class="cal" id="cal" role="grid"></div>
+      <div class="legend"><span><i style="background:#fdf2e6;border:1px solid #e8c9a8"></i>節日</span><span><i style="background:var(--gold);border-radius:50%"></i>初一十五、做牙</span><span>大字為農曆，小字為國曆</span></div>
+      <div class="detail" id="detail" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="upcoming">
+    <h2>接下來的祭祀日</h2>
+    <div class="card"><ul class="upcoming" id="upList"></ul></div>
+  </section>
+
+  <section id="occasions">
+    <h2>婚喪喜慶與特殊祭祀</h2>
+    <div id="occ"></div>
+  </section>
+
+  <section id="tips">
+    <h2>小提醒</h2>
+    <div class="card" id="tipBox"></div>
+  </section>
+</main>
+
+<footer><div class="wrap" id="foot"></div></footer>
+
+<script src="/assets/data.js"></script>
+<script src="/assets/lunar.js"></script>
+<script src="/assets/common.js"></script>
+<script>
+(function(){
+  const B = BAIBAI, L = Lunar, NAMES = '/mingcheng/';
+  const WD = ['日','一','二','三','四','五','六'];
+  const DAY = 86400000;
+
+  function eventsOn(date){
+    const l = L.lunarOf(date), out = [];
+    for (const e of B.days){
+      if (e.rule === 'monthly' && e.d.includes(l.d)) out.push(e);
+      else if (e.rule === 'lunar' && !l.leap && l.m === e.m && l.d === e.d) out.push(e);
+      else if (e.rule === 'monthEnd' && !l.leap && l.m === e.m){
+        const n = L.lunarOf(new Date(date.getTime() + DAY));
+        if (n.m !== e.m || n.leap) out.push(e);
+      }
+      else if (e.rule === 'term' && L.termDate(date.getUTCFullYear(), e.term).getTime() === date.getTime()) out.push(e);
+    }
+    return { l, ev: out };
+  }
+
+  const now = new Date();
+  const today = L.utc(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  let viewY = today.getUTCFullYear(), viewM = today.getUTCMonth() + 1, sel = today;
+
+  function solarText(d){ return d.getUTCFullYear() + '/' + (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.getUTCDay()] + '）'; }
+
+  function evCard(e){
+    let h = '<div class="occ-head">' + ICONS[e.type] + '<h4>' + e.name + (e.common ? ' <span class="star" title="一般常見做法">＊</span>' : '') + '</h4></div>';
+    h += '<dl class="kv"><dt>拜誰</dt><dd>' + e.who + '</dd><dt>金紙</dt><dd>' + linkPapers(e.paper, NAMES) + '</dd>';
+    if (e.extra) h += '<dt>備註</dt><dd>' + linkPapers(e.extra, NAMES) + '</dd>';
+    return h + '</dl>';
+  }
+
+  function render(){
+    const first = L.utc(viewY, viewM, 1);
+    const days = new Date(Date.UTC(viewY, viewM, 0)).getUTCDate();
+    const lFirst = L.lunarOf(first), lLast = L.lunarOf(L.utc(viewY, viewM, days));
+    const lm = l => (l.leap ? '閏' : '') + L.monthName(l.m);
+    document.getElementById('calTitle').innerHTML = '農曆' + lm(lFirst) + (lm(lFirst) !== lm(lLast) ? '～' + lm(lLast) : '') +
+      '<span class="sub">國曆 ' + viewY + ' 年 ' + viewM + ' 月</span>';
+    let h = WD.map(w => '<div class="wd">' + w + '</div>').join('');
+    for (let i = 0; i < first.getUTCDay(); i++) h += '<div class="day out"></div>';
+    for (let d = 1; d <= days; d++){
+      const dt = L.utc(viewY, viewM, d), { l, ev } = eventsOn(dt);
+      const fest = ev.find(e => e.type !== 'daily'), daily = ev.some(e => e.type === 'daily');
+      const cls = ['day'];
+      if (fest) cls.push('has'); else if (daily) cls.push('daily');
+      if (dt.getTime() === today.getTime()) cls.push('today');
+      if (dt.getTime() === sel.getTime()) cls.push('sel');
+      const top = l.d === 1 ? (l.leap ? '閏' : '') + L.monthName(l.m) : L.dayName(l.d);
+      h += '<button class="' + cls.join(' ') + '" data-t="' + dt.getTime() + '" aria-label="' + solarText(dt) + ' 農曆' + L.label(l) + (ev.length ? '，' + ev.map(e => e.name).join('、') : '') + '">' +
+        '<span class="ln' + (l.d === 1 ? ' m1' : '') + '">' + top + '</span><span class="sn">' + d + '</span>' +
+        (fest ? '<span class="ev">' + fest.name.split('・')[0] + '</span>' : daily ? '<span class="dot"></span>' : '') + '</button>';
+    }
+    const cal = document.getElementById('cal');
+    cal.innerHTML = h;
+    cal.querySelectorAll('.day[data-t]').forEach(b => b.onclick = () => { sel = new Date(+b.dataset.t); render(); });
+    showDetail();
+  }
+
+  function showDetail(){
+    const { l, ev } = eventsOn(sel);
+    let h = '<p class="muted" style="margin:0 0 6px">農曆' + L.label(l) + '・國曆 ' + solarText(sel) + '</p>';
+    h += ev.length ? ev.map(evCard).join('<hr style="border:0;border-top:1px dashed var(--line);margin:12px 0">') : '<p style="margin:0">這天沒有特別的祭祀日。</p>';
+    document.getElementById('detail').innerHTML = h;
+  }
+
+  function upcoming(){
+    const list = [];
+    for (let i = 0; i < 120 && list.length < 10; i++){
+      const dt = new Date(today.getTime() + i * DAY), { l, ev } = eventsOn(dt);
+      ev.forEach(e => list.push({ dt, l, e }));
+    }
+    document.getElementById('upList').innerHTML = list.map(x =>
+      '<li><span class="when">' + L.label(x.l) + '<small>' + solarText(x.dt) + (x.dt.getTime() === today.getTime() ? '・今天' : '') + '</small></span>' +
+      '<span><b>' + x.e.name + '</b>' + (x.e.common ? '<span class="star">＊</span>' : '') + '<br>' + linkPapers(x.e.paper, NAMES) + '</span></li>').join('');
+  }
+
+  function occasions(){
+    document.getElementById('occ').innerHTML = B.occasions.map(g =>
+      '<h3 style="display:flex;align-items:center;gap:8px;margin:18px 0 10px">' + ICONS[g.type] + g.group + '</h3><div class="grid">' +
+      g.items.map(it => '<div class="card"><h4 style="margin:0;font-family:var(--serif);font-size:18px">' + it.name + '</h4><dl class="kv">' +
+        '<dt>金紙</dt><dd>' + linkPapers(it.paper, NAMES) + '</dd>' +
+        (it.incense ? '<dt>香燭</dt><dd>' + it.incense + '</dd>' : '') +
+        (it.extra ? '<dt>備註</dt><dd>' + linkPapers(it.extra, NAMES) + '</dd>' : '') + '</dl>' +
+        (it.fire ? '<div class="fire">' + ICONS.firecracker + '<span>' + B.fire[it.fire] + '</span></div>' : '') + '</div>').join('') + '</div>').join('');
+  }
+
+  document.getElementById('prev').onclick = () => { if (--viewM < 1){ viewM = 12; viewY--; } render(); };
+  document.getElementById('next').onclick = () => { if (++viewM > 12){ viewM = 1; viewY++; } render(); };
+  document.getElementById('todayBtn').onclick = () => { viewY = today.getUTCFullYear(); viewM = today.getUTCMonth() + 1; sel = today; render(); };
+
+  document.getElementById('tipBox').innerHTML = '<ul style="margin:0;padding-left:1.2em">' +
+    B.tips.map(t => '<li>' + linkPapers(t, NAMES) + '</li>').join('') + '</ul><div class="fire">' + ICONS.firecracker + '<span>' + B.fire.eco + '</span></div>';
+  render(); upcoming(); occasions(); renderSources(document.getElementById('foot'));
+})();
+</script>
+</body>
+</html>

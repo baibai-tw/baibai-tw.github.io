@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>金紙名稱｜壽金、刈金、福金、三色金是什麼</title>
+<meta name="description" content="金紙名稱小辭典：天公金、大箔壽金、壽金、刈金、福金（土地公金）、大銀、小銀、庫錢、經衣等，各地叫法、台語讀音與用途。三色金是哪三種？">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/"><span class="seal">香</span><span class="t">拜拜</span></a>
+  <nav><a href="/jieri/">節日祭祀</a><a href="/mingcheng/" aria-current="page">金紙名稱</a></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="page-head">
+    <h1>金紙名稱</h1>
+    <p>同一種金紙，北部、中南部的叫法常常不一樣。這裡整理常見名稱、別稱和用途。</p>
+  </div>
+
+  <section id="combos">
+    <h2>常見組合</h2>
+    <div class="grid" id="comboBox"></div>
+  </section>
+
+  <section id="list">
+    <h2>金紙小辭典</h2>
+    <input type="search" id="q" placeholder="搜尋名稱、別稱或用途，例如：土地公、三童子、四方金" aria-label="搜尋金紙">
+    <div class="filters" id="filters"></div>
+    <div class="grid" id="papers"></div>
+    <p class="muted" id="empty" hidden>沒有找到符合的金紙，換個關鍵字試試，或到店詢問。</p>
+    <p class="muted">台語讀音以教育部《臺灣台語常用詞辭典》為準；標 ✓ 的是辭典有收錄的寫法。</p>
+  </section>
+</main>
+
+<footer><div class="wrap" id="foot"></div></footer>
+
+<script src="/assets/data.js"></script>
+<script src="/assets/common.js"></script>
+<script>
+(function(){
+  const B = BAIBAI;
+  const byId = Object.fromEntries(B.papers.map(p => [p.id, p]));
+  const sheetCls = p => p.cat === '銀紙' ? 'silver' : (p.cat === '配件' || p.cat === '喪葬') ? 'plain' : '';
+  const sheet = (p, label) => '<a class="paper ' + sheetCls(p) + '" href="#' + p.id + '"><span class="sheet"><span class="foil">' + p.name.slice(0, 2) + '</span></span><span class="nm">' + (label || p.name) + '</span></a>';
+
+  document.getElementById('comboBox').innerHTML = B.combos.map(c =>
+    '<div class="card"><h3 style="margin:0">' + c.name + '</h3><div class="combo">' +
+    c.items.map(([id, label]) => sheet(byId[id], label)).join('<span class="plus">＋</span>') +
+    '</div><p class="muted" style="margin:6px 0 0">' + c.note + '</p></div>').join('');
+
+  const cats = ['全部', ...new Set(B.papers.map(p => p.cat))];
+  let cat = '全部';
+  const fb = document.getElementById('filters');
+  fb.innerHTML = cats.map(c => '<button aria-pressed="' + (c === cat) + '">' + c + '</button>').join('');
+  fb.querySelectorAll('button').forEach(b => b.onclick = () => { cat = b.textContent; fb.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); draw(); });
+
+  const q = document.getElementById('q');
+  q.oninput = draw;
+
+  function draw(){
+    const t = q.value.trim();
+    const list = B.papers.filter(p => (cat === '全部' || p.cat === cat) && (!t || [p.name, p.alias, p.use, p.note].join(' ').includes(t)));
+    document.getElementById('papers').innerHTML = list.map(p =>
+      '<article class="card pcard" id="' + p.id + '">' + sheet(p, '') +
+      '<div><h3>' + p.name + '</h3>' + (p.tl ? '<div class="tl">' + p.tl + (p.ok ? ' ✓' : '') + '</div>' : '') +
+      '<dl class="kv">' + (p.alias ? '<dt>別稱</dt><dd>' + p.alias + '</dd>' : '') + '<dt>用途</dt><dd>' + p.use + '</dd>' +
+      (p.note ? '<dt>備註</dt><dd>' + p.note + '</dd>' : '') + '</dl></div></article>').join('');
+    document.getElementById('empty').hidden = list.length > 0;
+  }
+  draw();
+  if (location.hash){ const el = document.querySelector(location.hash); if (el) el.scrollIntoView(); }
+  renderSources(document.getElementById('foot'));
+})();
+</script>
+</body>
+</html>

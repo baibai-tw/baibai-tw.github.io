@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>拜拜｜金紙與祭祀參考</title>
+<meta name="description" content="拜拜要準備什麼金紙？農曆節日、初一十五、做牙、婚喪喜慶的金紙準備參考，以及壽金、刈金、福金等金紙名稱說明。">
+<meta property="og:title" content="拜拜｜金紙與祭祀參考">
+<meta property="og:description" content="農曆節日、婚喪喜慶該準備哪些金紙，一查就知道。">
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+  html,body{height:100%}
+  body{overflow:hidden;background:#e9e3d6}
+  #scene{position:fixed;inset:0}
+  #scene svg,#scene iframe{width:100%;height:100%;display:block;border:0}
+  .hero-ui{position:fixed;inset:0;pointer-events:none;display:grid;
+    grid-template-rows:1fr auto;padding:max(28px,env(safe-area-inset-top)) max(22px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left))}
+  .title{justify-self:end;display:flex;gap:14px;align-items:flex-start;writing-mode:vertical-rl}
+  .title h1{margin:0;font-size:clamp(46px,9vw,84px);letter-spacing:.3em;color:#1b1916;font-weight:700}
+  .title p{margin:0;font-family:var(--serif);font-size:clamp(15px,2.4vw,19px);letter-spacing:.35em;color:#3d3932}
+  .title .seal{writing-mode:horizontal-tb;width:34px;height:34px;font-size:15px}
+  .menu{pointer-events:auto;display:grid;gap:10px;max-width:420px;width:100%}
+  .menu a{display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:#1b1916;
+    background:rgba(247,243,234,.82);backdrop-filter:blur(4px);border:1px solid rgba(60,52,40,.25);border-radius:12px;padding:14px 18px;font-family:var(--serif);font-size:19px;letter-spacing:.12em}
+  .menu a span{font-family:var(--sans);font-size:13px;letter-spacing:0;color:#6c6457}
+  .menu a:hover{background:rgba(247,243,234,.95)}
+  .note{pointer-events:auto;margin-top:12px;font-size:12px;color:#5d564b}
+  #sound{position:fixed;top:max(18px,env(safe-area-inset-top));left:max(18px,env(safe-area-inset-left));pointer-events:auto}
+</style>
+</head>
+<body>
+<div id="scene" aria-hidden="true"></div>
+
+<div class="hero-ui">
+  <div class="title">
+    <h1>拜拜</h1>
+    <p>金紙與祭祀參考</p>
+    <span class="seal">香</span>
+  </div>
+  <div>
+    <nav class="menu" aria-label="主選單">
+      <a href="/jieri/">農曆節日與特殊祭祀 <span>金紙怎麼準備 →</span></a>
+      <a href="/mingcheng/">金紙名稱 <span>各地叫法與用途 →</span></a>
+    </nav>
+    <p class="note">各地習俗不同，內容僅供參考，歡迎到店詢問。</p>
+  </div>
+</div>
+
+<!-- 動態水墨主視覺接上後才會顯示 -->
+<button id="sound" class="btn" hidden aria-pressed="false">開聲音</button>
+
+<script>
+/* 靜態水墨佔位圖：之後換成動態主視覺（WebGPU），不支援的裝置仍顯示這張 */
+(function(){
+  const W = 1000, H = 1600;
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  function ridge(base, amp, rough, step){
+    let pts = [], y = base, v = 0;
+    for (let x = -20; x <= W + 20; x += step){
+      v += (rnd() - .5) * rough; v *= .86; y = base + Math.sin(x / (180 + amp)) * amp * .6 + v * amp;
+      pts.push([x, y]);
+    }
+    return 'M-20,' + H + ' ' + pts.map(p => 'L' + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' L' + (W + 20) + ',' + H + 'Z';
+  }
+  const layers = [
+    {b:820, a:90, r:2.2, s:14, c:'#b9b3a6', o:.55, blur:6},
+    {b:930, a:120, r:2.6, s:12, c:'#8f897d', o:.6, blur:4},
+    {b:1060, a:110, r:3, s:10, c:'#5e5a52', o:.7, blur:2.5},
+    {b:1240, a:70, r:3.4, s:9, c:'#2e2c28', o:.85, blur:1.2}
+  ];
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efeae0"/><stop offset=".6" stop-color="#e6dfd1"/><stop offset="1" stop-color="#ddd5c4"/></linearGradient>' +
+    '<linearGradient id="mist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ebe5d9" stop-opacity="0"/><stop offset=".5" stop-color="#ebe5d9" stop-opacity=".85"/><stop offset="1" stop-color="#ebe5d9" stop-opacity="0"/></linearGradient>';
+  layers.forEach((l, i) => svg += '<filter id="b' + i + '"><feGaussianBlur stdDeviation="' + l.blur + '"/></filter>');
+  svg += '<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/><feColorMatrix values="0 0 0 0 .3  0 0 0 0 .27  0 0 0 0 .22  0 0 0 .06 0"/></filter></defs>' +
+    '<rect width="100%" height="100%" fill="url(#sky)"/><circle cx="300" cy="430" r="70" fill="#c9553f" opacity=".18"/>';
+  layers.forEach((l, i) => {
+    svg += '<path d="' + ridge(l.b, l.a, l.r, l.s) + '" fill="' + l.c + '" opacity="' + l.o + '" filter="url(#b' + i + ')"/>';
+    if (i < 3) svg += '<rect x="0" y="' + (l.b + 40) + '" width="' + W + '" height="160" fill="url(#mist)"/>';
+  });
+  /* 前景：卵石上的香塔與一縷煙 */
+  svg += '<g transform="translate(640 1330)"><ellipse cx="0" cy="40" rx="70" ry="22" fill="#24221f"/><ellipse cx="6" cy="10" rx="48" ry="17" fill="#3a3732"/><ellipse cx="-2" cy="-14" rx="30" ry="11" fill="#4a463f"/>' +
+    '<path d="M-14 -22 L0 -64 L14 -22 Z" fill="#6b4a2e"/><circle cx="0" cy="-66" r="2.5" fill="#d0673f"/>' +
+    '<path d="M0 -70 C -16 -120, 22 -150, 2 -200 S -20 -280, 12 -340" fill="none" stroke="#5a554c" stroke-width="2.2" stroke-linecap="round" opacity=".55"/></g>' +
+    '<rect width="100%" height="100%" filter="url(#grain)"/></svg>';
+  document.getElementById('scene').innerHTML = svg;
+})();
+</script>
+</body>
+</html>

@@ -17,7 +17,7 @@ window.ICONS = {
 
 window.renderSources = function(el){
   const B = window.BAIBAI;
-  el.innerHTML = '<p><b style="color:var(--ink-2)">金山謝鈺豐香店</b>・金紙不在多，心意最重要。</p><p>本站內容整理自民俗資料與店內經驗，僅供參考；各地習俗不同，請以在地慣例為準，也歡迎到店詢問。<span class="star">＊</span>表示一般常見做法，各地不一。</p>' +
+  el.innerHTML = '<p><b style="color:var(--ink-2)">謝鈺豐香店</b>・新北市金山區中正路5號・電話 02-2498-7881・每日 07:00–20:00・付款：現金、台灣Pay</p><p>金紙不在多，心意最重要。</p><p>本站內容整理自民俗資料與店內經驗，僅供參考；各地習俗不同，請以在地慣例為準，也歡迎到店詢問。<span class="star">＊</span>表示一般常見做法，各地不一。</p>' +
     '<details><summary>參考來源</summary><ol>' +
     B.sources.map(s => '<li><a href="' + s[1] + '" target="_blank" rel="noopener">' + s[0] + '</a></li>').join('') +
     '</ol></details>';

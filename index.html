@@ -51,41 +51,47 @@
 
 <script>
 /* 靜態水墨佔位圖：之後換成動態主視覺（WebGPU），不支援的裝置仍顯示這張 */
-(function(){
-  const W = 1000, H = 1600;
+function drawScene(){
+  const H = 1600, W = Math.round(H * Math.max(.45, Math.min(2.4, innerWidth / innerHeight)));
   let seed = 7;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  function ridge(base, amp, rough, step){
-    let pts = [], y = base, v = 0;
-    for (let x = -20; x <= W + 20; x += step){
-      v += (rnd() - .5) * rough; v *= .86; y = base + Math.sin(x / (180 + amp)) * amp * .6 + v * amp;
-      pts.push([x, y]);
+  /* 平滑山脊：幾個正弦波疊加＋少量雜訊 */
+  function ridge(base, amp, waves){
+    const ph = waves.map(() => rnd() * 6.28), pts = [];
+    let v = 0;
+    for (let x = -40; x <= W + 40; x += 8){
+      v = v * .9 + (rnd() - .5) * .08;
+      let y = base;
+      waves.forEach((w, i) => y -= Math.pow(Math.max(0, Math.sin(x / w + ph[i])), 1.6) * amp * (1 - i * .25));
+      pts.push([x, y + v * amp]);
     }
-    return 'M-20,' + H + ' ' + pts.map(p => 'L' + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' L' + (W + 20) + ',' + H + 'Z';
+    return 'M-40,' + H + ' ' + pts.map(p => 'L' + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' L' + (W + 40) + ',' + H + 'Z';
   }
   const layers = [
-    {b:820, a:90, r:2.2, s:14, c:'#b9b3a6', o:.55, blur:6},
-    {b:930, a:120, r:2.6, s:12, c:'#8f897d', o:.6, blur:4},
-    {b:1060, a:110, r:3, s:10, c:'#5e5a52', o:.7, blur:2.5},
-    {b:1240, a:70, r:3.4, s:9, c:'#2e2c28', o:.85, blur:1.2}
+    {b:900, a:260, w:[260,120,60], c:'#b9b3a6', o:.5, blur:6},
+    {b:1010, a:300, w:[200,90,45], c:'#8f897d', o:.55, blur:4},
+    {b:1140, a:240, w:[170,70,35], c:'#5e5a52', o:.65, blur:2.5},
+    {b:1530, a:110, w:[240,80,30], c:'#2e2c28', o:.85, blur:1.2}
   ];
-  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">' +
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">' +
     '<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efeae0"/><stop offset=".6" stop-color="#e6dfd1"/><stop offset="1" stop-color="#ddd5c4"/></linearGradient>' +
     '<linearGradient id="mist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ebe5d9" stop-opacity="0"/><stop offset=".5" stop-color="#ebe5d9" stop-opacity=".85"/><stop offset="1" stop-color="#ebe5d9" stop-opacity="0"/></linearGradient>';
   layers.forEach((l, i) => svg += '<filter id="b' + i + '"><feGaussianBlur stdDeviation="' + l.blur + '"/></filter>');
   svg += '<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/><feColorMatrix values="0 0 0 0 .3  0 0 0 0 .27  0 0 0 0 .22  0 0 0 .06 0"/></filter></defs>' +
-    '<rect width="100%" height="100%" fill="url(#sky)"/><circle cx="300" cy="430" r="70" fill="#c9553f" opacity=".18"/>';
+    '<rect width="100%" height="100%" fill="url(#sky)"/><circle cx="' + (W * .3) + '" cy="520" r="64" fill="#b8503c" opacity=".12"/>';
   layers.forEach((l, i) => {
-    svg += '<path d="' + ridge(l.b, l.a, l.r, l.s) + '" fill="' + l.c + '" opacity="' + l.o + '" filter="url(#b' + i + ')"/>';
+    svg += '<path d="' + ridge(l.b, l.a, l.w) + '" fill="' + l.c + '" opacity="' + l.o + '" filter="url(#b' + i + ')"/>';
     if (i < 3) svg += '<rect x="0" y="' + (l.b + 40) + '" width="' + W + '" height="160" fill="url(#mist)"/>';
   });
   /* 前景：卵石上的香塔與一縷煙 */
-  svg += '<g transform="translate(640 1330)"><ellipse cx="0" cy="40" rx="70" ry="22" fill="#24221f"/><ellipse cx="6" cy="10" rx="48" ry="17" fill="#3a3732"/><ellipse cx="-2" cy="-14" rx="30" ry="11" fill="#4a463f"/>' +
+  svg += '<g transform="translate(' + (W * .64) + ' 1420) scale(1.5)"><ellipse cx="0" cy="40" rx="70" ry="22" fill="#24221f"/><ellipse cx="6" cy="10" rx="48" ry="17" fill="#3a3732"/><ellipse cx="-2" cy="-14" rx="30" ry="11" fill="#4a463f"/>' +
     '<path d="M-14 -22 L0 -64 L14 -22 Z" fill="#6b4a2e"/><circle cx="0" cy="-66" r="2.5" fill="#d0673f"/>' +
     '<path d="M0 -70 C -16 -120, 22 -150, 2 -200 S -20 -280, 12 -340" fill="none" stroke="#5a554c" stroke-width="2.2" stroke-linecap="round" opacity=".55"/></g>' +
     '<rect width="100%" height="100%" filter="url(#grain)"/></svg>';
   document.getElementById('scene').innerHTML = svg;
-})();
+}
+drawScene();
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawScene, 200); });
 </script>
 </body>
 </html>

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>廟宇祭祀｜媽祖廟、財神廟、土地公廟要準備什麼金紙｜金山謝鈺豐香店</title>
-<meta name="description" content="到媽祖廟、財神廟、土地公廟、大眾爺廟拜拜，要準備哪些金紙與供品。金山謝鈺豐香店整理。">
-<link rel="stylesheet" href="/assets/style.css?v=20261115i">
+<meta name="description" content="到媽祖廟、財神廟、土地公廟、大眾爺廟、月老廟拜拜，要準備哪些金紙與供品。金山謝鈺豐香店整理。">
+<link rel="stylesheet" href="/assets/style.css?v=20261115j">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -23,13 +23,19 @@
 
 <footer><div class="wrap" id="foot"></div></footer>
 
-<script src="/assets/data.js?v=20261115i"></script>
-<script src="/assets/common.js?v=20261115i"></script>
+<script src="/assets/data.js?v=20261115j"></script>
+<script src="/assets/common.js?v=20261115j"></script>
 <script>
 (function(){
   const B = BAIBAI, NAMES = '/mingcheng/';
-  document.getElementById('cats').innerHTML = '<p class="notice" style="margin:0 0 14px">' + B.templeTip + '</p>' + B.temples.map(t =>
+  const byId = Object.fromEntries(B.temples.map(t => [t.id, t]));
+  const near = '<details class="cat" id="near" open><summary>' + ICONS.temple + '<span class="cat-name">店家附近</span><span class="muted">謝鈺豐香店 3 公里內的廟宇</span><span class="chev" aria-hidden="true">›</span></summary><ul class="big-list" style="padding:0 16px 12px">' +
+    B.nearby.map(([n, km, god, id, pid]) => '<li><i></i><span><b>' + n + '</b> <span class="muted">主祀' + god + '・約 ' + km + ' 公里</span>' +
+      (id ? '<br><a href="#' + id + '" data-open="' + id + '">怎麼準備 → ' + byId[id].name + '</a>' : '<br><span class="muted">金紙歡迎到店詢問</span>') + '</span>' +
+      '<a class="muted" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(n.replace(/（.*?）/, '') + ' 金山') + '&query_place_id=' + pid + '" target="_blank" rel="noopener">地圖</a></li>').join('') + '</ul></details>';
+  document.getElementById('cats').innerHTML = '<p class="notice" style="margin:0 0 14px">' + B.templeTip + '</p>' + near + B.temples.map(t =>
     '<details class="cat" id="' + t.id + '"><summary>' + ICONS.temple + '<span class="cat-name">' + t.name + '</span><span class="muted">' + t.who + '</span><span class="chev" aria-hidden="true">›</span></summary><div style="padding:0 16px 16px">' + templeCard(t, NAMES) + '</div></details>').join('');
+  document.querySelectorAll('[data-open]').forEach(x => x.onclick = () => { const d = document.getElementById(x.dataset.open); if (d) d.open = true; });
   const h = location.hash.slice(1), el = h && document.getElementById(h);
   if (el){ el.open = true; el.scrollIntoView(); }
   renderSources(document.getElementById('foot'));

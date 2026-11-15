@@ -59,7 +59,7 @@ window.occCard = function(it, base){
 };
 
 window.templeCard = function(t, base){
-  return '<dl class="kv"><dt>拜誰</dt><dd>' + t.who + '</dd><dt>金紙</dt><dd>' + linkPapers(t.paper, base) + '</dd>' +
+  return '<dl class="kv"><dt>金紙</dt><dd>' + linkPapers(t.paper, base) + '</dd>' +
     (t.offer ? '<dt>供品</dt><dd>' + t.offer + '</dd>' : '') +
     (t.extra ? '<dt>備註</dt><dd>' + linkPapers(t.extra, base) + '</dd>' : '') + '</dl>';
 };

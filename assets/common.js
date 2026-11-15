@@ -36,3 +36,9 @@ window.linkPapers = function(text, base){
   }
   return out + esc(plain);
 };
+
+/* 行業專屬小圖示 */
+window.roleBadge = function(roles){
+  const M = {fisher:['漁','討海人'], farmer:['農','作穡人'], shop:['商','做生意'], factory:['工','工廠']};
+  return (roles || []).map(r => '<span class="rb rb-' + r + '" title="' + M[r][1] + '專屬">' + M[r][0] + '</span>').join('');
+};

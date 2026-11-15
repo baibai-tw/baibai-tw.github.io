@@ -70,6 +70,7 @@
 
 <script src="/assets/data.js"></script>
 <script src="/assets/lunar.js"></script>
+<script src="/assets/common.js"></script>
 <script>
 
 /* 靜態水墨佔位圖：之後換成動態主視覺（WebGPU），不支援的裝置仍顯示這張 */
@@ -120,13 +121,10 @@ let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(dra
 (function(){
   const B = BAIBAI, L = Lunar, DAY = 86400000, WD = ['日','一','二','三','四','五','六'];
   const now = new Date(), today = L.utc(now.getFullYear(), now.getMonth() + 1, now.getDate());
-  let ROLE = 'home';
-  try { ROLE = localStorage.getItem('baibai-role') || 'home'; } catch (e) {}
-  const leadOf = e => e.big || (ROLE !== 'home' && e.roles && e.roles.includes(ROLE) ? (e.roleBig || 0) : 0);
+  const leadOf = e => e.big || 0;
   function eventsOn(date){
     const l = L.lunarOf(date), out = [];
     for (const e of B.days){
-      if (e.only && !e.roles.includes(ROLE)) continue;
       if (e.rule === 'monthly' && e.d.includes(l.d)) out.push(e);
       else if (e.rule === 'lunar' && !l.leap && l.m === e.m && l.d === e.d) out.push(e);
       else if (e.rule === 'monthEnd' && !l.leap && l.m === e.m){ const n = L.lunarOf(new Date(date.getTime() + DAY)); if (n.m !== e.m || n.leap) out.push(e); }
@@ -151,7 +149,7 @@ let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(dra
     const dt = new Date(today.getTime() + i * DAY), { l, ev } = eventsOn(dt);
     const fest = ev.find(e => e.type !== 'daily'), daily = ev.find(e => e.type === 'daily');
     const top = l.d === 1 ? (l.leap ? '閏' : '') + L.monthName(l.m) : L.dayName(l.d);
-    w += '<a href="/jieri/" class="' + (i === 0 ? 'today' : fest ? 'has' : '') + '" aria-label="' + md(dt) + ' 農曆' + L.label(l) + (ev.length ? '，' + ev.map(e => e.name).join('、') : '') + '"><span class="w">' + (i === 0 ? '今天' : WD[dt.getUTCDay()]) + '</span><span class="l">' + top + '</span><span class="s">' + (dt.getUTCMonth() + 1) + '/' + dt.getUTCDate() + '</span>' + ((fest || daily) ? '<span class="e">' + (fest || daily).name.split(/[・（、]/)[0] + '</span>' : '') + '</a>';
+    w += '<a href="/jieri/" class="' + (i === 0 ? 'today' : fest ? 'has' : '') + '" aria-label="' + md(dt) + ' 農曆' + L.label(l) + (ev.length ? '，' + ev.map(e => e.name).join('、') : '') + '"><span class="w">' + (i === 0 ? '今天' : WD[dt.getUTCDay()]) + '</span><span class="l">' + top + '</span><span class="s">' + (dt.getUTCMonth() + 1) + '/' + dt.getUTCDate() + '</span>' + ((fest || daily) ? '<span class="e">' + ((fest || daily).only ? roleBadge((fest || daily).roles.slice(0, 1)) : '') + (fest || daily).name.split(/[・（、]/)[0] + '</span>' : '') + '</a>';
   }
   document.getElementById('week').innerHTML = w;
   for (let i = 0; i < 400; i++){

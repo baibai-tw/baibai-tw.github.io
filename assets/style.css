@@ -133,3 +133,6 @@ footer a{color:var(--ink-2)}
 .roles{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
 .roles button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:14px}
 .roles button[aria-pressed=true]{background:var(--red);color:#fbeee6;border-color:var(--red)}
+.rb{display:inline-grid;place-items:center;width:1.45em;height:1.45em;margin:0 2px 0 0;border-radius:4px;font-size:.72em;font-family:var(--serif);font-weight:700;color:#fff;vertical-align:.12em;line-height:1;letter-spacing:0}
+.rb-fisher{background:#2f6f86}.rb-farmer{background:#5a7d2c}.rb-shop{background:#b07a1f}.rb-factory{background:#5e5a52}
+.cal .day .ev .rb,.week .e .rb{font-size:9px;width:13px;height:13px;vertical-align:0}

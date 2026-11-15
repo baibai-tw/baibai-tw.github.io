@@ -130,6 +130,3 @@ footer a{color:var(--ink-2)}
 .big-list li>i{width:8px;height:8px;border-radius:50%;background:var(--gold)}
 .big-list li>i.hot{background:var(--red)}
 .hot-t{color:var(--red);font-weight:700}
-.roles{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
-.roles button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:14px}
-.roles button[aria-pressed=true]{background:var(--red);color:#fbeee6;border-color:var(--red)}

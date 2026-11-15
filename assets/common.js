@@ -8,8 +8,6 @@ window.ICONS = {
   daily: '<svg class="ico" viewBox="0 0 40 40" aria-label="日常祭祀" role="img"><path d="M15 5c2 3-2 4 0 7M20 3c2 3-2 4 0 8M25 5c2 3-2 4 0 7" stroke="#8a8172" stroke-width="1.4" fill="none" stroke-linecap="round"/><path d="M15 13v13M20 12v14M25 13v13" stroke="#a3392a" stroke-width="1.6"/><path d="M9 26h22l-3 9H12z" fill="#c9a24a"/></svg>',
   /* 節日：燈籠 */
   fest: '<svg class="ico" viewBox="0 0 40 40" aria-label="節日" role="img"><path d="M20 3v4" stroke="#7e2a1e" stroke-width="1.6"/><rect x="15" y="7" width="10" height="3" rx="1" fill="#7e2a1e"/><ellipse cx="20" cy="20" rx="11" ry="10" fill="#c4553f"/><path d="M20 10v20M14 11.5c-3 5-3 12 0 17M26 11.5c3 5 3 12 0 17" stroke="#a3392a" stroke-width="1.2" fill="none"/><rect x="15" y="29" width="10" height="3" rx="1" fill="#7e2a1e"/><path d="M18 32v5M20 32v6M22 32v5" stroke="#c9a24a" stroke-width="1.2"/></svg>',
-  /* 行業：米斗 */
-  work: '<svg class="ico" viewBox="0 0 40 40" aria-label="行業專屬" role="img"><path d="M8 16h24l-4 18H12z" fill="#8a6a3a"/><path d="M8 16h24" stroke="#5b4720" stroke-width="2"/><ellipse cx="20" cy="15" rx="11" ry="5" fill="#e2c472"/><path d="M14 13c2-3 10-3 12 0" stroke="#c9a24a" fill="none"/><text x="20" y="30" text-anchor="middle" font-size="9" fill="#f3e7c6" font-family="serif">福</text></svg>',
   firecracker: '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="5" width="6" height="10" rx="1" fill="#a3392a"/><path d="M7 5c0-2 2-2 3-4" stroke="#7a2a1d" fill="none"/><circle cx="11" cy="1.5" r="1.2" fill="#e2a23b"/></svg>'
 };
 

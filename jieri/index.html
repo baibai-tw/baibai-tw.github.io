@@ -23,6 +23,14 @@
     </div>
   </div>
 
+  <section id="now">
+    <div class="now-grid">
+      <div class="card today-card" id="todayCard"></div>
+      <div class="card count-card" id="countCard"></div>
+      <div class="card" id="bigCard"></div>
+    </div>
+  </section>
+
   <section id="calendar">
     <h2>農曆祭祀日曆</h2>
     <div class="card">
@@ -36,10 +44,6 @@
     </div>
   </section>
 
-  <section id="upcoming">
-    <h2>接下來的祭祀日</h2>
-    <div class="card"><ul class="upcoming" id="upList"></ul></div>
-  </section>
 
   <section id="occasions">
     <h2>婚喪喜慶與特殊祭祀</h2>
@@ -124,15 +128,94 @@
     document.getElementById('detail').innerHTML = h;
   }
 
-  function upcoming(){
-    const list = [];
-    for (let i = 0; i < 120 && list.length < 10; i++){
-      const dt = new Date(today.getTime() + i * DAY), { l, ev } = eventsOn(dt);
-      ev.forEach(e => list.push({ dt, l, e }));
+  const STEM='甲乙丙丁戊己庚辛壬癸', BR='子丑寅卯辰巳午未申酉戌亥', ZO='鼠牛虎兔龍蛇馬羊猴雞狗豬';
+  function ganzhi(y){ const i = ((y - 4) % 60 + 60) % 60; return STEM[i % 10] + BR[i % 12] + '年（' + ZO[i % 12] + '）'; }
+  function moon(d){
+    const p = (d - 1) / 29.53, r = 22, c = 28, k = Math.abs(Math.cos(2 * Math.PI * p)) * r;
+    const names = d === 1 ? '新月' : d <= 6 ? '蛾眉月' : d <= 8 ? '上弦月' : d <= 14 ? '盈凸月' : d <= 16 ? '滿月' : d <= 21 ? '虧凸月' : d <= 23 ? '下弦月' : '殘月';
+    let path = '';
+    if (d > 1 && d < 30){
+      const wax = p < .5, s1 = wax ? 1 : 0, s2 = wax ? (p < .25 ? 0 : 1) : (p > .75 ? 1 : 0);
+      path = '<path d="M' + c + ' ' + (c - r) + ' A' + r + ' ' + r + ' 0 0 ' + s1 + ' ' + c + ' ' + (c + r) + ' A' + k.toFixed(1) + ' ' + r + ' 0 0 ' + s2 + ' ' + c + ' ' + (c - r) + 'Z" fill="#c9a24a"/>';
     }
-    document.getElementById('upList').innerHTML = list.map(x =>
-      '<li><span class="when">' + L.label(x.l) + '<small>' + solarText(x.dt) + (x.dt.getTime() === today.getTime() ? '・今天' : '') + '</small></span>' +
-      '<span><b>' + x.e.name + '</b>' + (x.e.common ? '<span class="star">＊</span>' : '') + '<br>' + linkPapers(x.e.paper, NAMES) + '</span></li>').join('');
+    return { svg: '<svg width="56" height="56" viewBox="0 0 56 56" role="img" aria-label="' + names + '"><circle cx="28" cy="28" r="22" fill="#ebe4d4" stroke="#b9ae97"/>' + path + '</svg>', name: names };
+  }
+  function findNext(test, from, max){
+    for (let i = 0; i < max; i++){
+      const dt = new Date(from.getTime() + i * DAY), r = eventsOn(dt), e = r.ev.find(test);
+      if (e) return { dt, l: r.l, e, days: i };
+    }
+  }
+  function papersIn(text){
+    const names = B.papers.slice().sort((x, y) => y.name.length - x.name.length), out = [];
+    for (let i = 0; i < text.length;){
+      const p = names.find(q => text.startsWith(q.name, i));
+      if (p){ if (!out.includes(p)) out.push(p); i += p.name.length; } else i++;
+    }
+    return out;
+  }
+  function md(d){ return (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.getUTCDay()] + '）'; }
+
+  function todayCard(){
+    const l = L.lunarOf(today), m = moon(l.d);
+    const nx = findNext(e => e.rule === 'monthly' && e.d[0] === 1, new Date(today.getTime() + DAY), 40);
+    document.getElementById('todayCard').innerHTML = m.svg +
+      '<div class="tc-main"><div class="muted">今天・' + ganzhi(l.y) + '</div><div class="tc-big">' + L.label(l) + '</div><div class="muted">國曆 ' + md(today) + '・' + m.name + '</div></div>' +
+      (nx ? '<div class="tc-next"><span class="muted">下次初一十五</span><b>' + L.dayName(nx.l.d) + '・' + (nx.days + 1) + ' 天後</b></div>' : '');
+  }
+
+  let NEXT;
+  function countCard(){
+    const n = NEXT = findNext(e => e.big, today, 400);
+    if (!n) return;
+    const lead = n.e.big, pct = Math.max(4, Math.min(100, Math.round((1 - n.days / lead) * 100)));
+    const ps = papersIn(n.e.paper);
+    document.getElementById('countCard').innerHTML =
+      '<div class="cc-top"><span class="muted">下一個大型節慶</span><span class="muted">' + L.label(n.l) + '・' + md(n.dt) + '</span></div>' +
+      '<div class="cc-title"><span class="cc-name">' + n.e.name.split('・')[0] + '</span><span class="cc-days">' + (n.days === 0 ? '就是今天' : '還有 <b>' + n.days + '</b> 天') + '</span></div>' +
+      (n.days <= lead ? '<div class="bar"><i style="width:' + pct + '%"></i></div>' : '') +
+      '<div class="muted" style="margin-top:8px">建議提前準備</div><div class="prep">' +
+      ps.map(p => '<a class="chip" href="' + NAMES + '#' + p.id + '">' + p.name + '</a>').join('') +
+      (n.e.offer ? n.e.offer.split('、').map(o => '<span class="chip offer">' + o + '</span>').join('') : '') + '</div>' +
+      '<div class="cc-btns"><button class="btn" id="icsBtn">加入行事曆</button><button class="btn" id="shareBtn">傳給家人</button></div><p class="muted" id="shareMsg" style="margin:6px 0 0" aria-live="polite"></p>';
+    document.getElementById('icsBtn').onclick = addCal;
+    document.getElementById('shareBtn').onclick = share;
+  }
+  function planText(n){
+    return n.e.name.split('・')[0] + '（' + md(n.dt) + '，農曆' + L.label(n.l) + '）\n金紙：' + n.e.paper + (n.e.offer ? '\n供品：' + n.e.offer : '') + '\n—— 金山謝鈺豐香店・拜拜參考 https://baibai-tw.github.io/jieri/';
+  }
+  function addCal(){
+    const n = NEXT, ymd = d => d.toISOString().slice(0, 10).replace(/-/g, '');
+    const esc = t => t.replace(/[,;\\]/g, m => '\\' + m).replace(/\n/g, '\\n');
+    const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//baibai-tw//TW','BEGIN:VEVENT',
+      'UID:' + ymd(n.dt) + '-' + n.e.name.length + '@baibai-tw.github.io','DTSTAMP:' + ymd(today) + 'T000000Z',
+      'DTSTART;VALUE=DATE:' + ymd(n.dt),'DTEND;VALUE=DATE:' + ymd(new Date(n.dt.getTime() + DAY)),
+      'SUMMARY:' + esc('拜拜・' + n.e.name.split('・')[0]),'DESCRIPTION:' + esc(planText(n)),
+      'BEGIN:VALARM','TRIGGER:-P3D','ACTION:DISPLAY','DESCRIPTION:' + esc('三天後' + n.e.name.split('・')[0] + '，記得準備'),'END:VALARM',
+      'BEGIN:VALARM','TRIGGER:-P1D','ACTION:DISPLAY','DESCRIPTION:' + esc('明天' + n.e.name.split('・')[0]),'END:VALARM',
+      'END:VEVENT','END:VCALENDAR'].join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([ics], {type:'text/calendar'}));
+    a.download = 'baibai-' + ymd(n.dt) + '.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    document.getElementById('shareMsg').textContent = '已下載行事曆檔，打開後加入手機行事曆，三天前與前一天會提醒。';
+  }
+  async function share(){
+    const t = planText(NEXT), msg = document.getElementById('shareMsg');
+    try {
+      if (navigator.share){ await navigator.share({ title: '拜拜準備', text: t }); return; }
+      await navigator.clipboard.writeText(t); msg.textContent = '已複製，可以貼到 LINE 傳給家人。';
+    } catch (e){ if (e.name !== 'AbortError') msg.textContent = '無法自動分享，請長按複製這頁網址。'; }
+  }
+  function bigCard(){
+    const list = [];
+    let from = today;
+    while (list.length < 4){
+      const n = findNext(e => e.big, from, 400); if (!n) break;
+      n.days = Math.round((n.dt - today) / DAY); list.push(n); from = new Date(n.dt.getTime() + DAY);
+    }
+    document.getElementById('bigCard').innerHTML = '<div class="muted" style="margin-bottom:8px">接下來的大日子</div><ul class="big-list">' +
+      list.map((x, i) => '<li><i class="' + (i === 0 ? 'hot' : '') + '"></i><span><b>' + x.e.name.split('・')[0] + '</b> <span class="muted">' + L.label(x.l) + '・' + md(x.dt) + '</span></span><span class="' + (i === 0 ? 'hot-t' : 'muted') + '">' + (x.days === 0 ? '今天' : x.days + ' 天') + '</span></li>').join('') + '</ul>';
   }
 
   function occasions(){
@@ -151,7 +234,7 @@
 
   document.getElementById('tipBox').innerHTML = '<ul style="margin:0;padding-left:1.2em">' +
     B.tips.map(t => '<li>' + linkPapers(t, NAMES) + '</li>').join('') + '</ul><div class="fire">' + ICONS.firecracker + '<span>' + B.fire.eco + '</span></div>';
-  render(); upcoming(); occasions(); renderSources(document.getElementById('foot'));
+  todayCard(); countCard(); bigCard(); render(); occasions(); renderSources(document.getElementById('foot'));
 })();
 </script>
 </body>

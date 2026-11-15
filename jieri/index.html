@@ -31,6 +31,12 @@
     </div>
   </section>
 
+  <section id="mine">
+    <h2>行業專屬祭祀</h2>
+    <p class="muted" id="mineLegend" style="margin:-4px 0 12px"></p>
+    <div class="grid" id="mineBox"></div>
+  </section>
+
   <section id="calendar">
     <h2>農曆祭祀日曆</h2>
     <div class="card">
@@ -65,6 +71,7 @@
 (function(){
   const B = BAIBAI, L = Lunar, NAMES = '/mingcheng/';
   const WD = ['日','一','二','三','四','五','六'];
+
   const DAY = 86400000;
 
   function eventsOn(date){
@@ -88,10 +95,11 @@
   function solarText(d){ return d.getUTCFullYear() + '/' + (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.getUTCDay()] + '）'; }
 
   function evCard(e){
-    let h = '<div class="occ-head">' + ICONS[e.type] + '<h4>' + e.name + (e.common ? ' <span class="star" title="一般常見做法">＊</span>' : '') + '</h4></div>';
+    let h = '<div class="occ-head">' + ICONS[e.type] + '<h4>' + e.name + (e.common ? ' <span class="star" title="一般常見做法">＊</span>' : '') + (e.only ? ' ' + roleBadge(e.roles) : '') + '</h4></div>';
     h += '<dl class="kv"><dt>拜誰</dt><dd>' + e.who + '</dd><dt>金紙</dt><dd>' + linkPapers(e.paper, NAMES) + '</dd>';
+    if (e.offer) h += '<dt>供品</dt><dd>' + e.offer + '</dd>';
     if (e.extra) h += '<dt>備註</dt><dd>' + linkPapers(e.extra, NAMES) + '</dd>';
-    return h + '</dl>';
+    return h + '</dl>' + (e.fire ? '<div class="fire">' + ICONS.firecracker + '<span>' + B.fire[e.fire] + '</span></div>' : '');
   }
 
   function render(){
@@ -113,7 +121,7 @@
       const top = l.d === 1 ? (l.leap ? '閏' : '') + L.monthName(l.m) : L.dayName(l.d);
       h += '<button class="' + cls.join(' ') + '" data-t="' + dt.getTime() + '" aria-label="' + solarText(dt) + ' 農曆' + L.label(l) + (ev.length ? '，' + ev.map(e => e.name).join('、') : '') + '">' +
         '<span class="ln' + (l.d === 1 ? ' m1' : '') + '">' + top + '</span><span class="sn">' + d + '</span>' +
-        (fest ? '<span class="ev">' + fest.name.split('・')[0] + '</span>' : daily ? '<span class="dot"></span>' : '') + '</button>';
+        (fest ? '<span class="ev">' + (fest.only ? roleBadge(fest.roles.slice(0, 1)) : '') + fest.name.split('・')[0] + '</span>' : daily ? '<span class="dot"></span>' : '') + '</button>';
     }
     const cal = document.getElementById('cal');
     cal.innerHTML = h;
@@ -164,11 +172,22 @@
       (nx ? '<div class="tc-next"><span class="muted">下次初一十五</span><b>' + L.dayName(nx.l.d) + '・' + (nx.days + 1) + ' 天後</b></div>' : '');
   }
 
+  const leadOf = e => e.big || 0;
+  function mine(){
+    document.getElementById('mineLegend').innerHTML = '標示 ' + ['fisher','farmer','shop','factory'].map(r => roleBadge([r]) + B.roles[r]).join('　') + ' 的專屬日子';
+    const dated = B.days.filter(e => e.only).map(e => findNext(x => x === e, today, 400)).filter(Boolean).sort((a, b) => a.days - b.days);
+    const occ = [].concat(...B.occasions.filter(g => g.type === 'work').map(g => g.items));
+    document.getElementById('mineBox').innerHTML =
+      dated.map(x => '<div class="card"><p class="muted" style="margin:0 0 4px">' + L.label(x.l) + '・' + md(x.dt) + '・' + (x.days === 0 ? '今天' : x.days + ' 天後') + '</p>' + evCard(x.e) + '</div>').join('') +
+      occ.map(it => '<div class="card"><div class="occ-head">' + ICONS.work + '<h4>' + it.name + ' ' + roleBadge(it.roles) + '</h4></div><dl class="kv"><dt>金紙</dt><dd>' + linkPapers(it.paper, NAMES) + '</dd>' +
+        (it.extra ? '<dt>備註</dt><dd>' + linkPapers(it.extra, NAMES) + '</dd>' : '') + '</dl>' + (it.fire ? '<div class="fire">' + ICONS.firecracker + '<span>' + B.fire[it.fire] + '</span></div>' : '') + '</div>').join('');
+  }
+
   let NEXT;
   function countCard(){
-    const n = NEXT = findNext(e => e.big, today, 400);
+    const n = NEXT = findNext(e => leadOf(e) > 0, today, 400);
     if (!n) return;
-    const lead = n.e.big, pct = Math.max(4, Math.min(100, Math.round((1 - n.days / lead) * 100)));
+    const lead = leadOf(n.e), pct = Math.max(4, Math.min(100, Math.round((1 - n.days / lead) * 100)));
     const ps = papersIn(n.e.paper);
     document.getElementById('countCard').innerHTML =
       '<div class="cc-top"><span class="muted">下一個大型節慶</span><span class="muted">' + L.label(n.l) + '・' + md(n.dt) + '</span></div>' +
@@ -211,7 +230,7 @@
     const list = [];
     let from = today;
     while (list.length < 4){
-      const n = findNext(e => e.big, from, 400); if (!n) break;
+      const n = findNext(e => leadOf(e) > 0, from, 400); if (!n) break;
       n.days = Math.round((n.dt - today) / DAY); list.push(n); from = new Date(n.dt.getTime() + DAY);
     }
     document.getElementById('bigCard').innerHTML = '<div class="muted" style="margin-bottom:8px">接下來的大日子</div><ul class="big-list">' +
@@ -219,9 +238,9 @@
   }
 
   function occasions(){
-    document.getElementById('occ').innerHTML = B.occasions.map(g =>
+    document.getElementById('occ').innerHTML = B.occasions.filter(g => g.type !== 'work').map(g =>
       '<h3 style="display:flex;align-items:center;gap:8px;margin:18px 0 10px">' + ICONS[g.type] + g.group + '</h3><div class="grid">' +
-      g.items.map(it => '<div class="card"><h4 style="margin:0;font-family:var(--serif);font-size:18px">' + it.name + '</h4><dl class="kv">' +
+      g.items.map(it => '<div class="card"><h4 style="margin:0;font-family:var(--serif);font-size:18px">' + it.name + (it.common ? ' <span class="star">＊</span>' : '') + '</h4>' + (it.roles ? '<p class="muted" style="margin:2px 0 0">' + it.roles.map(r => B.roles[r]).join('、') + '</p>' : '') + '<dl class="kv">' +
         '<dt>金紙</dt><dd>' + linkPapers(it.paper, NAMES) + '</dd>' +
         (it.incense ? '<dt>香燭</dt><dd>' + it.incense + '</dd>' : '') +
         (it.extra ? '<dt>備註</dt><dd>' + linkPapers(it.extra, NAMES) + '</dd>' : '') + '</dl>' +
@@ -234,7 +253,7 @@
 
   document.getElementById('tipBox').innerHTML = '<ul style="margin:0;padding-left:1.2em">' +
     B.tips.map(t => '<li>' + linkPapers(t, NAMES) + '</li>').join('') + '</ul><div class="fire">' + ICONS.firecracker + '<span>' + B.fire.eco + '</span></div>';
-  todayCard(); countCard(); bigCard(); render(); occasions(); renderSources(document.getElementById('foot'));
+  todayCard(); countCard(); bigCard(); mine(); render(); occasions(); renderSources(document.getElementById('foot'));
 })();
 </script>
 </body>

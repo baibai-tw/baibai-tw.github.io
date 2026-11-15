@@ -136,3 +136,5 @@ footer a{color:var(--ink-2)}
 .rb{display:inline-grid;place-items:center;width:1.45em;height:1.45em;margin:0 2px 0 0;border-radius:4px;font-size:.72em;font-family:var(--serif);font-weight:700;color:#fff;vertical-align:.12em;line-height:1;letter-spacing:0}
 .rb-fisher{background:#2f6f86}.rb-farmer{background:#5a7d2c}.rb-shop{background:#b07a1f}.rb-factory{background:#5e5a52}
 .cal .day .ev .rb,.week .e .rb{font-size:9px;width:13px;height:13px;vertical-align:0}
+.shopnote{margin-top:10px;padding:8px 10px;border-radius:8px;background:#f6efe0;border:1px dashed #d3b98a;color:#5b4720;font-size:14px;display:flex;gap:8px;align-items:flex-start}
+.shopnote .seal{flex:none;width:22px;height:22px;font-size:12px}

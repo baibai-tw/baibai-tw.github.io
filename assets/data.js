@@ -46,7 +46,7 @@ days: [
   {rule:'lunar', m:1, d:9, name:'天公生', type:'fest', big:14, offer:'五牲、五齊或六齊、圈仔粿、甘蔗（掛高錢）', who:'玉皇大帝', paper:'天公金或天金、大箔壽金、壽金、刈金', extra:'高錢掛在甘蔗上；南部用頂極金、尺金、太極金。常配：五牲、五齊或六齊、圈仔粿、甘蔗'},
   {rule:'lunar', m:1, d:15, name:'上元・天官大帝誕辰', type:'fest', who:'三界公', paper:'大箔壽金、天金、壽金、刈金', common:true},
   {rule:'lunar', m:2, d:2, name:'頭牙・土地公生', type:'fest', roles:['farmer','shop','factory'], roleBig:14, offer:'三牲、發糕、水果', who:'土地公', paper:'福金、壽金'},
-  {rule:'term', term:'qingming', name:'清明掃墓', type:'fest', big:21, offer:'墓紙（五色紙）、丁仔粿、鼠麴粿', who:'后土、祖先', paper:'先用壽金、福金、刈金拜后土，再用刈金和銀紙拜祖墳', extra:'墓紙（五色紙）壓墳；常配丁仔粿、鼠麴粿。新北市墓區的金紙要送到服務處集中焚化'},
+  {rule:'term', term:'qingming', name:'清明掃墓', type:'fest', big:21, shop:'店裡為同行的孩童與長輩準備了隨身小香袋，出門祭拜帶在身上，讓家人安心。歡迎到店詢問', offer:'墓紙（五色紙）、丁仔粿、鼠麴粿', who:'后土、祖先', paper:'先用壽金、福金、刈金拜后土，再用刈金和銀紙拜祖墳', extra:'墓紙（五色紙）壓墳；常配丁仔粿、鼠麴粿。新北市墓區的金紙要送到服務處集中焚化'},
   {rule:'lunar', m:3, d:23, name:'媽祖生', type:'fest', roles:['fisher'], roleBig:21, offer:'紅湯圓、麵線、發糕、紅龜粿、鮮花、清茶', who:'媽祖', paper:'大箔壽金、壽金、刈金', common:true},
   {rule:'lunar', m:4, d:16, name:'金包里二媽回娘家', type:'fest', only:true, roles:['fisher'], roleBig:14, who:'媽祖', paper:'金紙種類與份量依各家習慣，歡迎到店詢問', extra:'金山在地祭典：金包里慈護宮在農曆四月十六前後大退潮時，步行恭送二媽回野柳媽祖洞，是全台唯一的海岸遶境。實際日期依廟方公告'},
   {rule:'lunar', m:4, d:26, name:'神農大帝聖誕', type:'fest', only:true, roles:['farmer'], roleBig:14, who:'神農大帝（五穀王）', paper:'金紙種類與份量依各家習慣，歡迎到店詢問', extra:'農民祈求五穀豐收、風調雨順'},
@@ -91,6 +91,7 @@ occasions: [
     {name:'店面・工廠拜地基主', roles:['shop','factory'], paper:'北部用刈金加小銀，中部用四方金，南部用九金', extra:'可在初二、十六做牙時一起拜'}
   ]},
   {group:'日常與特殊', type:'daily', items:[
+    {name:'到靈骨塔、墓園祭拜祖先', paper:'各塔方與墓區規定不同，有的集中焚化、有的不開放燒金紙，出發前先確認；金紙種類歡迎到店詢問', extra:'清明掃墓可參考節日日曆裡的清明準備', shop:'店裡為同行的孩童與長輩準備了隨身小香袋，出門祭拜帶在身上，讓家人安心。歡迎到店詢問'},
     {name:'神明生日', paper:'壽金；高位神明加大箔壽金'},
     {name:'犒軍', paper:'北部用刈金；南部用壽金、中九金、甲馬', extra:'常配小三牲'}
   ]}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>婚喪喜慶｜結婚、喪事、入厝要準備什麼金紙｜金山謝鈺豐香店</title>
+<meta name="description" content="結婚謝天公、訂婚、安床，做七、出殯、百日對年，入厝、開市、滿月、做十六歲，各要準備哪些金紙與香燭。金山謝鈺豐香店整理。">
+<link rel="stylesheet" href="/assets/style.css?v=20261115e">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/"><span class="seal">香</span><span class="t">謝鈺豐香店</span></a>
+  <nav><a href="/jieri/">節日祭祀</a><a href="/hunsang/" aria-current="page">婚喪喜慶</a><a href="/mingcheng/">金紙名稱</a></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="page-head">
+    <h1>婚喪喜慶</h1>
+    <p>點開類別，看各場合要準備的金紙、香燭與注意事項。點金紙名稱可以看說明。</p>
+  </div>
+  <div id="cats"></div>
+</main>
+
+<footer><div class="wrap" id="foot"></div></footer>
+
+<script src="/assets/data.js?v=20261115e"></script>
+<script src="/assets/common.js?v=20261115e"></script>
+<script>
+(function(){
+  const B = BAIBAI, NAMES = '/mingcheng/';
+  const order = [['wed','hun','婚'],['mourn','sang','喪'],['joy','xi','喜慶']];
+  document.getElementById('cats').innerHTML = order.map(([t, id, label]) => {
+    const g = B.occasions.find(x => x.type === t);
+    return '<details class="cat" id="' + id + '"><summary>' + ICONS[t] + '<span class="cat-name">' + label + '</span><span class="muted">' + g.items.map(i => i.name.split(/[（・]/)[0]).join('、') + '</span><span class="chev" aria-hidden="true">›</span></summary><div class="grid">' +
+      g.items.map(it => occCard(it, NAMES)).join('') + '</div></details>';
+  }).join('');
+  const h = location.hash.slice(1), el = h && document.getElementById(h);
+  if (el){ el.open = true; el.scrollIntoView(); }
+  renderSources(document.getElementById('foot'));
+})();
+</script>
+</body>
+</html>

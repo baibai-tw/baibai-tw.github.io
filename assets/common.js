@@ -1,7 +1,9 @@
 /* 共用：圖示、頁尾來源 */
 window.ICONS = {
   /* 喜慶：祭典香爐 */
-  joy: '<svg class="ico" viewBox="0 0 40 40" aria-label="喜慶" role="img"><path d="M14 6c1 2-1 3 0 5M20 4c1 2-1 3 0 6M26 6c1 2-1 3 0 5" stroke="#a3392a" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M8 15h24l-2 12a8 8 0 0 1-8 6h-4a8 8 0 0 1-8-6z" fill="#a3392a"/><path d="M6 14h28" stroke="#7e2a1e" stroke-width="2.4" stroke-linecap="round"/><path d="M13 33l-2 4M27 33l2 4M20 34v3" stroke="#7e2a1e" stroke-width="2" stroke-linecap="round"/><text x="20" y="27" text-anchor="middle" font-size="9" fill="#f6e0b5" font-family="serif">囍</text></svg>',
+  joy: '<svg class="ico" viewBox="0 0 40 40" aria-label="喜慶" role="img"><path d="M14 6c1 2-1 3 0 5M20 4c1 2-1 3 0 6M26 6c1 2-1 3 0 5" stroke="#a3392a" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M8 15h24l-2 12a8 8 0 0 1-8 6h-4a8 8 0 0 1-8-6z" fill="#a3392a"/><path d="M6 14h28" stroke="#7e2a1e" stroke-width="2.4" stroke-linecap="round"/><path d="M13 33l-2 4M27 33l2 4M20 34v3" stroke="#7e2a1e" stroke-width="2" stroke-linecap="round"/><text x="20" y="27" text-anchor="middle" font-size="9" fill="#f6e0b5" font-family="serif">福</text></svg>',
+  /* 婚：紅帖 */
+  wed: '<svg class="ico" viewBox="0 0 40 40" aria-label="婚" role="img"><rect x="7" y="6" width="26" height="29" rx="2" fill="#c4553f"/><rect x="10" y="9" width="20" height="23" rx="1" fill="none" stroke="#e2c472" stroke-width="1"/><text x="20" y="26" text-anchor="middle" font-size="14" fill="#f6e0b5" font-family="serif">囍</text></svg>',
   /* 喪事：白包 */
   mourn: '<svg class="ico" viewBox="0 0 40 40" aria-label="喪事" role="img"><rect x="9" y="5" width="22" height="31" rx="2" fill="#fff" stroke="#3a3833" stroke-width="1.6"/><path d="M9 11l11 7 11-7" fill="none" stroke="#3a3833" stroke-width="1.4"/><text x="20" y="31" text-anchor="middle" font-size="9" fill="#3a3833" font-family="serif">奠</text></svg>',
   /* 日常：清香 */
@@ -41,4 +43,15 @@ window.linkPapers = function(text, base){
 window.roleBadge = function(roles){
   const M = {fisher:['漁','討海人'], farmer:['農','作穡人'], shop:['商','做生意'], factory:['工','工廠']};
   return (roles || []).map(r => '<span class="rb rb-' + r + '" title="' + M[r][1] + '專屬">' + M[r][0] + '</span>').join('');
+};
+
+/* 婚喪喜慶卡片 */
+window.occCard = function(it, base){
+  const B = window.BAIBAI;
+  return '<div class="card"><h4 style="margin:0;font-family:var(--serif);font-size:18px">' + it.name + (it.common ? ' <span class="star">＊</span>' : '') + (it.roles ? ' ' + roleBadge(it.roles) : '') + '</h4><dl class="kv">' +
+    '<dt>金紙</dt><dd>' + linkPapers(it.paper, base) + '</dd>' +
+    (it.incense ? '<dt>香燭</dt><dd>' + it.incense + '</dd>' : '') +
+    (it.extra ? '<dt>備註</dt><dd>' + linkPapers(it.extra, base) + '</dd>' : '') + '</dl>' +
+    (it.shop ? '<div class="shopnote"><span class="seal">香</span><span>' + it.shop + '</span></div>' : '') +
+    (it.fire ? '<div class="fire">' + ICONS.firecracker + '<span>' + B.fire[it.fire] + '</span></div>' : '') + '</div>';
 };

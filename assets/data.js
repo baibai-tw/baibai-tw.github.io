@@ -60,7 +60,7 @@ days: [
   {rule:'lunar', m:9, d:9, name:'重陽', type:'fest', who:'祖先', paper:'刈金、大銀', common:true},
   {rule:'lunar', m:10, d:10, name:'水仙尊王聖誕', type:'fest', roles:['fisher'], roleBig:14, who:'水仙尊王', paper:'金紙種類與份量依各家習慣，歡迎到店詢問', extra:'水仙尊王是船員與漁民的守護神；端午也是祭拜水仙尊王的日子'},
   {rule:'lunar', m:10, d:15, name:'下元・水官大帝誕辰', type:'fest', who:'三界公', paper:'大箔壽金、天金、壽金、刈金', common:true},
-  {rule:'term', term:'dongzhi', name:'冬至祭祖', type:'fest', big:14, offer:'湯圓、雞母狗仔', who:'神明、祖先', paper:'壽金、刈金、大銀', extra:'常配湯圓、雞母狗仔', common:true},
+  {rule:'term', term:'dongzhi', name:'冬至祭祖', type:'fest', big:14, offer:'湯圓', who:'神明、祖先', paper:'壽金、刈金、大銀', extra:'常配湯圓', common:true},
   {rule:'lunar', m:12, d:16, name:'尾牙', type:'fest', big:14, roles:['farmer','shop','factory'], offer:'', who:'土地公、地基主', paper:'福金；地基主用刈金加小銀'},
   {rule:'lunar', m:12, d:24, name:'送神', type:'fest', who:'灶君、眾神', paper:'壽金、甲馬', extra:'甲馬用來送神；南部用雲馬總馬'},
   {rule:'monthEnd', m:12, name:'除夕', type:'fest', big:30, offer:'甜粿、發粿、菜頭粿', who:'神明、祖先、地基主', paper:'壽金、刈金、大銀；祭祖用刈金和大銀', extra:'常配甜粿、發粿、菜頭粿', common:true}

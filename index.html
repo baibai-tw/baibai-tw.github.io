@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
@@ -10,53 +10,72 @@
 <link rel="stylesheet" href="/assets/style.css">
 <style>
   html,body{height:100%}
-  body{overflow:hidden;background:#e9e3d6}
-  #scene{position:fixed;inset:0}
+  body{margin:0;overflow:hidden;display:grid;grid-template-rows:60% 40%;height:100dvh;background:var(--paper)}
+  .stage{position:relative;overflow:hidden;background:#e9e3d6}
+  #scene{position:absolute;inset:0}
   #scene svg,#scene iframe{width:100%;height:100%;display:block;border:0}
-  .hero-ui{position:fixed;inset:0;pointer-events:none;display:grid;
-    grid-template-rows:1fr auto;padding:max(28px,env(safe-area-inset-top)) max(22px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left))}
-  .title{justify-self:end;display:flex;gap:14px;align-items:flex-start;writing-mode:vertical-rl}
-  .title h1{margin:0;font-size:clamp(40px,min(9vw,10vh),84px);white-space:nowrap;letter-spacing:.3em;color:#1b1916;font-weight:700}
-  .title p{margin:0;font-family:var(--serif);font-size:clamp(13px,min(2.4vw,2.6vh),19px);letter-spacing:.2em;white-space:nowrap;color:#3d3932}
-  .title .seal{writing-mode:horizontal-tb;width:34px;height:34px;font-size:15px}
-  .shop{margin:0 0 6px;font-family:var(--serif);font-size:15px;letter-spacing:.25em;color:#a3392a;text-shadow:0 0 8px rgba(240,235,225,.9)}
-  .lead{margin:0 0 14px;font-family:var(--serif);font-size:clamp(16px,2.6vw,20px);line-height:1.9;letter-spacing:.12em;color:#1b1916;text-shadow:0 0 12px rgba(240,235,225,.9),0 0 4px rgba(240,235,225,.9)}
-  .menu{pointer-events:auto;display:grid;gap:10px;max-width:420px;width:100%}
-  .menu a{display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:#1b1916;
-    background:rgba(247,243,234,.82);backdrop-filter:blur(4px);border:1px solid rgba(60,52,40,.25);border-radius:12px;padding:14px 18px;font-family:var(--serif);font-size:19px;letter-spacing:.12em}
-  .menu a span{font-family:var(--sans);font-size:13px;letter-spacing:0;color:#6c6457}
-  .menu a:hover{background:rgba(247,243,234,.95)}
-  .note{pointer-events:auto;margin-top:12px;font-size:12px;color:#f1ece2;text-shadow:0 1px 2px rgba(0,0,0,.6)}
-  #sound{position:fixed;top:max(18px,env(safe-area-inset-top));left:max(18px,env(safe-area-inset-left));pointer-events:auto}
+  .title{position:absolute;top:max(18px,env(safe-area-inset-top));right:max(18px,env(safe-area-inset-right));display:flex;gap:12px;align-items:flex-start;writing-mode:vertical-rl;pointer-events:none}
+  .title h1{margin:0;font-size:clamp(40px,min(9vw,8vh),80px);letter-spacing:.3em;color:#1b1916;white-space:nowrap}
+  .title p{margin:0;font-family:var(--serif);font-size:clamp(13px,min(2.4vw,2.2vh),18px);letter-spacing:.2em;color:#3d3932;white-space:nowrap}
+  .title .seal{writing-mode:horizontal-tb;width:30px;height:30px;font-size:14px}
+  .panel{overflow-y:auto;border-top:1px solid var(--line);padding:12px max(16px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+  .p-top{display:flex;align-items:center;gap:12px}
+  .p-top svg{flex:none}
+  .p-date{flex:1;min-width:0}
+  .p-date .big{font-family:var(--serif);font-size:24px;font-weight:700;line-height:1.25}
+  .p-date .sm{font-size:13px;color:var(--mute)}
+  .p-shop{font-family:var(--serif);font-size:13px;color:var(--red);letter-spacing:.15em;text-align:right}
+  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .week a{display:flex;flex-direction:column;align-items:center;padding:5px 0 4px;border-radius:8px;background:var(--card);border:1px solid var(--line);text-decoration:none;color:var(--ink);min-width:0}
+  .week a .w{font-size:11px;color:var(--mute)}
+  .week a .l{font-family:var(--serif);font-size:14px;font-weight:700;line-height:1.3}
+  .week a .s{font-size:11px;color:var(--mute)}
+  .week a .e{font-size:10px;color:var(--red);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 2px}
+  .week a.today{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .week a.today .w,.week a.today .s,.week a.today .e{color:var(--paper)}
+  .week a.has{background:#fdf2e6;border-color:#e8c9a8}
+  .next{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding:8px 12px;border-radius:10px;background:var(--card);border:1px solid var(--line);text-decoration:none;color:var(--ink)}
+  .next .k{font-size:12px;color:var(--mute)}
+  .next .n{font-family:var(--serif);font-size:19px;font-weight:700}
+  .next .d{color:var(--red)}
+  .next .d b{font-family:var(--serif);font-size:20px}
+  .menu{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .menu a{display:block;text-align:center;text-decoration:none;color:var(--paper);background:var(--ink);border-radius:10px;padding:10px 6px;font-family:var(--serif);font-size:16px;letter-spacing:.08em}
+  .menu a + a{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+  .lead{margin:0;font-family:var(--serif);font-size:13px;color:var(--ink-2);text-align:center;letter-spacing:.08em}
+  @media (orientation:landscape) and (min-width:700px){
+    body{grid-template-rows:none;grid-template-columns:40% 60%}
+    .panel{order:-1;border-top:0;border-right:1px solid var(--line);padding:24px;justify-content:center;gap:14px}
+    .p-date .big{font-size:30px}
+    .week a .l{font-size:16px}
+  }
 </style>
 </head>
 <body>
-<div id="scene" aria-hidden="true"></div>
-
-<div class="hero-ui">
-  <div class="title">
-    <h1>拜拜</h1>
-    <p>金紙與祭祀參考</p>
-    <span class="seal">香</span>
-  </div>
-  <div>
-    <p class="shop">金山・謝鈺豐香店</p>
-    <p class="lead">祭祀，是思念的延續。<br>金紙不在多，心意到了，就是最好的準備。</p>
-    <nav class="menu" aria-label="主選單">
-      <a href="/jieri/">農曆節日與特殊祭祀 <span>金紙怎麼準備 →</span></a>
-      <a href="/mingcheng/">金紙名稱 <span>各地叫法與用途 →</span></a>
-    </nav>
-    <p class="note">金山謝鈺豐香店整理・各地習俗不同，內容僅供參考，歡迎到店詢問。</p>
-  </div>
+<div class="stage">
+  <div id="scene" aria-hidden="true"></div>
+  <div class="title"><h1>拜拜</h1><p>金紙與祭祀參考</p><span class="seal">香</span></div>
 </div>
 
-<!-- 動態水墨主視覺接上後才會顯示 -->
-<button id="sound" class="btn" hidden aria-pressed="false">開聲音</button>
+<main class="panel" id="panel">
+  <div class="p-top" id="pTop"></div>
+  <div class="week" id="week" aria-label="這七天"></div>
+  <a class="next" id="next" href="/jieri/"></a>
+  <nav class="menu" aria-label="主選單">
+    <a href="/jieri/">節日與祭祀日曆</a>
+    <a href="/mingcheng/">金紙名稱</a>
+  </nav>
+  <p class="lead">祭祀，是思念的延續。金紙不在多，心意最重要。</p>
+</main>
 
+<script src="/assets/data.js"></script>
+<script src="/assets/lunar.js"></script>
 <script>
+
 /* 靜態水墨佔位圖：之後換成動態主視覺（WebGPU），不支援的裝置仍顯示這張 */
 function drawScene(){
-  const H = 1600, W = Math.round(H * Math.max(.45, Math.min(2.4, innerWidth / innerHeight)));
+  const sc = document.getElementById('scene');
+  const H = 1600, W = Math.round(H * Math.max(.45, Math.min(2.4, sc.clientWidth / Math.max(1, sc.clientHeight))));
   let seed = 7;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   /* 平滑山脊：幾個正弦波疊加＋少量雜訊 */
@@ -88,7 +107,7 @@ function drawScene(){
     if (i < 3) svg += '<rect x="0" y="' + (l.b + 40) + '" width="' + W + '" height="160" fill="url(#mist)"/>';
   });
   /* 前景：卵石上的香塔與一縷煙 */
-  svg += '<g transform="translate(' + (W * (W < H ? .72 : .64)) + ' ' + (W < H ? 1120 : 1420) + ') scale(1.5)"><ellipse cx="0" cy="40" rx="70" ry="22" fill="#24221f"/><ellipse cx="6" cy="10" rx="48" ry="17" fill="#3a3732"/><ellipse cx="-2" cy="-14" rx="30" ry="11" fill="#4a463f"/>' +
+  svg += '<g transform="translate(' + (W * .66) + ' 1400' + ') scale(1.5)"><ellipse cx="0" cy="40" rx="70" ry="22" fill="#24221f"/><ellipse cx="6" cy="10" rx="48" ry="17" fill="#3a3732"/><ellipse cx="-2" cy="-14" rx="30" ry="11" fill="#4a463f"/>' +
     '<path d="M-14 -22 L0 -64 L14 -22 Z" fill="#6b4a2e"/><circle cx="0" cy="-66" r="2.5" fill="#d0673f"/>' +
     '<path d="M0 -70 C -16 -120, 22 -150, 2 -200 S -20 -280, 12 -340" fill="none" stroke="#5a554c" stroke-width="2.2" stroke-linecap="round" opacity=".55"/></g>' +
     '<rect width="100%" height="100%" filter="url(#grain)"/></svg>';
@@ -96,6 +115,49 @@ function drawScene(){
 }
 drawScene();
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawScene, 200); });
+
+
+(function(){
+  const B = BAIBAI, L = Lunar, DAY = 86400000, WD = ['日','一','二','三','四','五','六'];
+  const now = new Date(), today = L.utc(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  let ROLE = 'home';
+  try { ROLE = localStorage.getItem('baibai-role') || 'home'; } catch (e) {}
+  const leadOf = e => e.big || (ROLE !== 'home' && e.roles && e.roles.includes(ROLE) ? (e.roleBig || 0) : 0);
+  function eventsOn(date){
+    const l = L.lunarOf(date), out = [];
+    for (const e of B.days){
+      if (e.rule === 'monthly' && e.d.includes(l.d)) out.push(e);
+      else if (e.rule === 'lunar' && !l.leap && l.m === e.m && l.d === e.d) out.push(e);
+      else if (e.rule === 'monthEnd' && !l.leap && l.m === e.m){ const n = L.lunarOf(new Date(date.getTime() + DAY)); if (n.m !== e.m || n.leap) out.push(e); }
+      else if (e.rule === 'term' && L.termDate(date.getUTCFullYear(), e.term).getTime() === date.getTime()) out.push(e);
+    }
+    return { l, ev: out };
+  }
+  const STEM = '甲乙丙丁戊己庚辛壬癸', BR = '子丑寅卯辰巳午未申酉戌亥', ZO = '鼠牛虎兔龍蛇馬羊猴雞狗豬';
+  const gz = y => { const i = ((y - 4) % 60 + 60) % 60; return STEM[i % 10] + BR[i % 12] + '年（' + ZO[i % 12] + '）'; };
+  function moon(d){
+    const p = (d - 1) / 29.53, r = 20, c = 24, k = Math.abs(Math.cos(2 * Math.PI * p)) * r;
+    let path = '';
+    if (d > 1 && d < 30){ const wax = p < .5, s1 = wax ? 1 : 0, s2 = wax ? (p < .25 ? 0 : 1) : (p > .75 ? 1 : 0);
+      path = '<path d="M' + c + ' ' + (c - r) + ' A' + r + ' ' + r + ' 0 0 ' + s1 + ' ' + c + ' ' + (c + r) + ' A' + k.toFixed(1) + ' ' + r + ' 0 0 ' + s2 + ' ' + c + ' ' + (c - r) + 'Z" fill="#c9a24a"/>'; }
+    return '<svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#ebe4d4" stroke="#b9ae97"/>' + path + '</svg>';
+  }
+  const md = d => (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.getUTCDay()] + '）';
+  const l0 = L.lunarOf(today);
+  document.getElementById('pTop').innerHTML = moon(l0.d) + '<div class="p-date"><div class="sm">今天・' + gz(l0.y) + '</div><div class="big">農曆' + L.label(l0) + '</div><div class="sm">國曆 ' + today.getUTCFullYear() + '/' + md(today) + '</div></div><div class="p-shop">金山<br>謝鈺豐香店</div>';
+  let w = '';
+  for (let i = 0; i < 7; i++){
+    const dt = new Date(today.getTime() + i * DAY), { l, ev } = eventsOn(dt);
+    const fest = ev.find(e => e.type !== 'daily'), daily = ev.find(e => e.type === 'daily');
+    const top = l.d === 1 ? (l.leap ? '閏' : '') + L.monthName(l.m) : L.dayName(l.d);
+    w += '<a href="/jieri/" class="' + (i === 0 ? 'today' : fest ? 'has' : '') + '" aria-label="' + md(dt) + ' 農曆' + L.label(l) + (ev.length ? '，' + ev.map(e => e.name).join('、') : '') + '"><span class="w">' + (i === 0 ? '今天' : WD[dt.getUTCDay()]) + '</span><span class="l">' + top + '</span><span class="s">' + (dt.getUTCMonth() + 1) + '/' + dt.getUTCDate() + '</span>' + ((fest || daily) ? '<span class="e">' + (fest || daily).name.split(/[・（、]/)[0] + '</span>' : '') + '</a>';
+  }
+  document.getElementById('week').innerHTML = w;
+  for (let i = 0; i < 400; i++){
+    const dt = new Date(today.getTime() + i * DAY), { l, ev } = eventsOn(dt), e = ev.find(x => leadOf(x) > 0);
+    if (e){ document.getElementById('next').innerHTML = '<span class="k">下一個大型節慶</span><span class="n">' + e.name.split('・')[0] + '</span><span class="d">' + (i === 0 ? '就是今天' : '還有 <b>' + i + '</b> 天') + '</span><span class="k">農曆' + L.label(l) + '・' + md(dt) + '</span>'; break; }
+  }
+})();
 </script>
 </body>
 </html>

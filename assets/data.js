@@ -22,6 +22,7 @@ papers: [
   {id:'kuqian', name:'庫錢', alias:'', tl:'khòo-tsînn', ok:true, cat:'喪葬', use:'喪事、還庫', note:''},
   {id:'wangsheng', name:'往生錢', alias:'', tl:'', cat:'喪葬', use:'喪事、超渡', note:'印有往生咒'},
   {id:'jingyi', name:'經衣', alias:'更衣', tl:'', cat:'配件', use:'好兄弟、普渡、地基主', note:''},
+  {id:'caishen', name:'五路財神金', alias:'財神金', tl:'', cat:'神明金', use:'正月初五迎財神、開工開市', note:'商家迎財神常與壽金、刈金一起準備'},
   {id:'jiama', name:'甲馬', alias:'', tl:'kah-bé', ok:true, cat:'配件', use:'迎神、送神、犒軍', note:''},
   {id:'gaoqian', name:'高錢', alias:'', tl:'', cat:'配件', use:'拜天公時掛在甘蔗上', note:''},
   {id:'chuangmu', name:'床母衣', alias:'鳥母衣', tl:'', cat:'配件', use:'床母、七娘媽、註生娘娘', note:''},
@@ -38,24 +39,29 @@ combos: [
 /* ── 祭祀日：rule = 每月 / 農曆 / 節氣 / 月末 ── */
 days: [
   {rule:'monthly', d:[1,15], name:'初一、十五拜神明', type:'daily', who:'神明、祖先', paper:'壽金、刈金；祖先用大銀'},
-  {rule:'monthly', d:[2,16], name:'做牙（拜土地公）', type:'daily', who:'土地公、地基主', paper:'福金；地基主用刈金加小銀', extra:'南部拜地基主常用九金；舊屋拜地基主可加經衣'},
+  {rule:'monthly', d:[2,16], name:'做牙（拜土地公）', type:'daily', roles:['shop','factory'], who:'土地公、地基主', paper:'福金；地基主用刈金加小銀', extra:'南部拜地基主常用九金；舊屋拜地基主可加經衣'},
   {rule:'lunar', m:1, d:1, name:'春節開正', type:'fest', big:30, offer:'', who:'神明、祖先', paper:'壽金、刈金、大銀', common:true},
   {rule:'lunar', m:1, d:4, name:'接神', type:'fest', who:'灶君、眾神', paper:'壽金、甲馬', extra:'甲馬用來迎神'},
+  {rule:'lunar', m:1, d:5, name:'接財神・開工', type:'fest', roles:['shop','factory'], roleBig:14, who:'五路財神、福德正神', paper:'壽金、福金、刈金、五路財神金', offer:'三牲、發糕、糖果、橘子、香蕉、梨子、蘋果、帶葉鳳梨', extra:'正月初五是五路財神生日，商家多在這天或擇吉日開工。店裡沒有財神神位的，可在門口或廠內近門處設桌向天迎接', fire:'trad'},
   {rule:'lunar', m:1, d:9, name:'天公生', type:'fest', big:14, offer:'五牲、五齊或六齊、圈仔粿、甘蔗（掛高錢）', who:'玉皇大帝', paper:'天公金或天金、大箔壽金、壽金、刈金', extra:'高錢掛在甘蔗上；南部用頂極金、尺金、太極金。常配：五牲、五齊或六齊、圈仔粿、甘蔗'},
   {rule:'lunar', m:1, d:15, name:'上元・天官大帝誕辰', type:'fest', who:'三界公', paper:'大箔壽金、天金、壽金、刈金', common:true},
-  {rule:'lunar', m:2, d:2, name:'頭牙・土地公生', type:'fest', who:'土地公', paper:'福金、壽金'},
+  {rule:'lunar', m:2, d:2, name:'頭牙・土地公生', type:'fest', roles:['farmer','shop','factory'], roleBig:14, offer:'三牲、發糕、水果', who:'土地公', paper:'福金、壽金'},
   {rule:'term', term:'qingming', name:'清明掃墓', type:'fest', big:21, offer:'墓紙（五色紙）、丁仔粿、鼠麴粿', who:'后土、祖先', paper:'先用壽金、福金、刈金拜后土，再用刈金和銀紙拜祖墳', extra:'墓紙（五色紙）壓墳；常配丁仔粿、鼠麴粿。新北市墓區的金紙要送到服務處集中焚化'},
-  {rule:'lunar', m:3, d:23, name:'媽祖生', type:'fest', who:'媽祖', paper:'大箔壽金、壽金、刈金', common:true},
+  {rule:'lunar', m:3, d:23, name:'媽祖生', type:'fest', roles:['fisher'], roleBig:21, offer:'紅湯圓、麵線、發糕、紅龜粿、鮮花、清茶', who:'媽祖', paper:'大箔壽金、壽金、刈金', common:true},
+  {rule:'lunar', m:4, d:16, name:'金包里二媽回娘家', type:'fest', roles:['fisher'], roleBig:14, who:'媽祖', paper:'沿途設香案迎轎，可準備壽金、刈金', common:true, extra:'金山在地祭典：金包里慈護宮在農曆四月十六前後大退潮時，步行恭送二媽回野柳媽祖洞，是全台唯一的海岸遶境。實際日期依廟方公告'},
+  {rule:'lunar', m:4, d:26, name:'神農大帝聖誕', type:'fest', roles:['farmer'], roleBig:14, who:'神農大帝（五穀王）', paper:'壽金、刈金', common:true, extra:'農民祈求五穀豐收、風調雨順'},
   {rule:'lunar', m:5, d:5, name:'端午', type:'fest', big:14, offer:'粽子', who:'神明、祖先', paper:'壽金、刈金、大銀', common:true},
+  {rule:'lunar', m:6, d:24, name:'關聖帝君聖誕', type:'fest', roles:['shop'], who:'關聖帝君（武財神）', paper:'壽金、刈金', common:true},
   {rule:'lunar', m:7, d:1, name:'開鬼門', type:'fest', who:'好兄弟', paper:'小銀、經衣', common:true},
   {rule:'lunar', m:7, d:7, name:'七娘媽生', type:'fest', who:'七娘媽、床母', paper:'壽金、床母衣', common:true},
-  {rule:'lunar', m:7, d:15, name:'中元普渡・地官大帝誕辰', type:'fest', big:30, offer:'鼠麴粿、芋粿、看牲', who:'地官、好兄弟', paper:'拜神用壽金、刈金；普渡用小銀、經衣', extra:'常配鼠麴粿、芋粿、看牲。經衣是否燒給自家祖先，說法不一'},
+  {rule:'lunar', m:7, d:15, name:'中元普渡・地官大帝誕辰', type:'fest', roles:['fisher'], big:30, offer:'鼠麴粿、芋粿、看牲', who:'地官、好兄弟', paper:'拜神用壽金、刈金；普渡用小銀、經衣', extra:'常配鼠麴粿、芋粿、看牲。經衣是否燒給自家祖先，說法不一'},
   {rule:'monthEnd', m:7, name:'關鬼門', type:'fest', who:'好兄弟', paper:'小銀、經衣', common:true},
-  {rule:'lunar', m:8, d:15, name:'中秋', type:'fest', big:14, offer:'月餅、柚子', who:'土地公、祖先', paper:'福金、刈金、大銀', common:true},
+  {rule:'lunar', m:8, d:15, name:'中秋', type:'fest', roles:['farmer'], big:14, offer:'月餅、柚子', who:'土地公、祖先', paper:'福金、刈金、大銀', common:true},
   {rule:'lunar', m:9, d:9, name:'重陽', type:'fest', who:'祖先', paper:'刈金、大銀', common:true},
+  {rule:'lunar', m:10, d:10, name:'水仙尊王聖誕', type:'fest', roles:['fisher'], roleBig:14, who:'水仙尊王', paper:'壽金、刈金', common:true, extra:'水仙尊王是船員與漁民的守護神；端午也是祭拜水仙尊王的日子'},
   {rule:'lunar', m:10, d:15, name:'下元・水官大帝誕辰', type:'fest', who:'三界公', paper:'大箔壽金、天金、壽金、刈金', common:true},
   {rule:'term', term:'dongzhi', name:'冬至祭祖', type:'fest', big:14, offer:'湯圓、雞母狗仔', who:'神明、祖先', paper:'壽金、刈金、大銀', extra:'常配湯圓、雞母狗仔', common:true},
-  {rule:'lunar', m:12, d:16, name:'尾牙', type:'fest', big:14, offer:'', who:'土地公、地基主', paper:'福金；地基主用刈金加小銀'},
+  {rule:'lunar', m:12, d:16, name:'尾牙', type:'fest', big:14, roles:['farmer','shop','factory'], offer:'', who:'土地公、地基主', paper:'福金；地基主用刈金加小銀'},
   {rule:'lunar', m:12, d:24, name:'送神', type:'fest', who:'灶君、眾神', paper:'壽金、甲馬', extra:'甲馬用來送神；南部用雲馬總馬'},
   {rule:'monthEnd', m:12, name:'除夕', type:'fest', big:30, offer:'甜粿、發粿、菜頭粿', who:'神明、祖先、地基主', paper:'壽金、刈金、大銀；祭祖用刈金和大銀', extra:'常配甜粿、發粿、菜頭粿', common:true}
 ],
@@ -79,11 +85,18 @@ occasions: [
     {name:'合爐', paper:'歡迎到店詢問', extra:'一副牲禮（一定要有雞）、三碗紅圓、發粿、菜飯。合爐前不拜天公、不做甜粿紅龜粿、不綁粽'},
     {name:'撿骨', paper:'燒紙錢給亡者和土地公，種類歡迎到店詢問', extra:'常配金斗甕'}
   ]},
+  {group:'行業專屬', type:'work', items:[
+    {name:'新船下水・出海祈安', roles:['fisher'], paper:'拜媽祖或船上供奉的神明用壽金、刈金；種類與份量歡迎到店詢問', common:true, extra:'祈求出入平安、漁獲滿載', fire:'trad'},
+    {name:'開工拜好兄弟', roles:['shop','factory'], paper:'拜神明用壽金；好兄弟用九金、銀紙', extra:'常配餅乾、糖果、汽水、水果'},
+    {name:'店面・工廠拜地基主', roles:['shop','factory'], paper:'北部用刈金加小銀，中部用四方金，南部用九金', extra:'可在初二、十六做牙時一起拜'}
+  ]},
   {group:'日常與特殊', type:'daily', items:[
     {name:'神明生日', paper:'壽金；高位神明加大箔壽金'},
     {name:'犒軍', paper:'北部用刈金；南部用壽金、中九金、甲馬', extra:'常配小三牲'}
   ]}
 ],
+
+roles: {home:'一般家庭', fisher:'討海人（漁民）', farmer:'作穡人（農民）', shop:'做生意（商家）', factory:'工廠'},
 
 fire: {
   trad: '開工、喜慶傳統上使用紅紙鞭炮，可向店內詢問。請依各地法規及燃放時段規定。',
@@ -106,6 +119,12 @@ sources: [
   ['神酷：入厝','https://folk.tw/practices/ruocuo/'],
   ['神酷：傳統喪禮','https://folk.tw/practices/sangli/'],
   ['NOWnews 保庇網：銀紙','https://www.nownews.com/news/5627473'],
+  ['NOWnews：初五迎財神拜法','https://www.nownews.com/news/6362410'],
+  ['NOWnews：拜媽祖供品','https://www.nownews.com/news/6814884'],
+  ['TVBS：開工拜拜準備','https://supertaste.tvbs.com.tw/hot/353166'],
+  ['新頭殼：金包里二媽回野柳媽祖洞','https://newtalk.tw/news/view/2022-05-16/755679'],
+  ['聯合新聞網：神農大帝聖誕','https://udn.com/news/story/7268/9559983'],
+  ['Yahoo 新聞：水仙尊王','https://tw.news.yahoo.com/tag/水仙尊王'],
   ['關鍵評論網：紙錢整理','https://www.thenewslens.com/article/147154']
 ]
 };

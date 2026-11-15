@@ -17,9 +17,9 @@
     grid-template-rows:1fr auto;padding:max(28px,env(safe-area-inset-top)) max(22px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left))}
   .title{justify-self:end;display:flex;gap:14px;align-items:flex-start;writing-mode:vertical-rl}
   .title h1{margin:0;font-size:clamp(46px,9vw,84px);letter-spacing:.3em;color:#1b1916;font-weight:700}
-  .title p{margin:0;font-family:var(--serif);font-size:clamp(15px,2.4vw,19px);letter-spacing:.35em;color:#3d3932}
+  .title p{margin:0;font-family:var(--serif);font-size:clamp(15px,2.4vw,19px);letter-spacing:.2em;color:#3d3932}
   .title .seal{writing-mode:horizontal-tb;width:34px;height:34px;font-size:15px}
-  .title .shop{font-size:clamp(13px,2vw,15px);letter-spacing:.3em;color:#5a5348;margin-top:6px}
+  .shop{margin:0 0 6px;font-family:var(--serif);font-size:15px;letter-spacing:.25em;color:#a3392a;text-shadow:0 0 8px rgba(240,235,225,.9)}
   .lead{margin:0 0 14px;font-family:var(--serif);font-size:clamp(16px,2.6vw,20px);line-height:1.9;letter-spacing:.12em;color:#1b1916;text-shadow:0 0 12px rgba(240,235,225,.9),0 0 4px rgba(240,235,225,.9)}
   .menu{pointer-events:auto;display:grid;gap:10px;max-width:420px;width:100%}
   .menu a{display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:#1b1916;
@@ -38,9 +38,9 @@
     <h1>拜拜</h1>
     <p>金紙與祭祀參考</p>
     <span class="seal">香</span>
-    <p class="shop">金山　謝鈺豐香店</p>
   </div>
   <div>
+    <p class="shop">金山・謝鈺豐香店</p>
     <p class="lead">祭祀，是思念的延續。<br>金紙不在多，心意到了，就是最好的準備。</p>
     <nav class="menu" aria-label="主選單">
       <a href="/jieri/">農曆節日與特殊祭祀 <span>金紙怎麼準備 →</span></a>
@@ -88,7 +88,7 @@ function drawScene(){
     if (i < 3) svg += '<rect x="0" y="' + (l.b + 40) + '" width="' + W + '" height="160" fill="url(#mist)"/>';
   });
   /* 前景：卵石上的香塔與一縷煙 */
-  svg += '<g transform="translate(' + (W * (W < H ? .3 : .64)) + ' ' + (W < H ? 1080 : 1420) + ') scale(1.5)"><ellipse cx="0" cy="40" rx="70" ry="22" fill="#24221f"/><ellipse cx="6" cy="10" rx="48" ry="17" fill="#3a3732"/><ellipse cx="-2" cy="-14" rx="30" ry="11" fill="#4a463f"/>' +
+  svg += '<g transform="translate(' + (W * (W < H ? .72 : .64)) + ' ' + (W < H ? 1120 : 1420) + ') scale(1.5)"><ellipse cx="0" cy="40" rx="70" ry="22" fill="#24221f"/><ellipse cx="6" cy="10" rx="48" ry="17" fill="#3a3732"/><ellipse cx="-2" cy="-14" rx="30" ry="11" fill="#4a463f"/>' +
     '<path d="M-14 -22 L0 -64 L14 -22 Z" fill="#6b4a2e"/><circle cx="0" cy="-66" r="2.5" fill="#d0673f"/>' +
     '<path d="M0 -70 C -16 -120, 22 -150, 2 -200 S -20 -280, 12 -340" fill="none" stroke="#5a554c" stroke-width="2.2" stroke-linecap="round" opacity=".55"/></g>' +
     '<rect width="100%" height="100%" filter="url(#grain)"/></svg>';

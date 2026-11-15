@@ -104,3 +104,4 @@ footer a{color:var(--ink-2)}
 .cal-bar h3{min-width:0}
 .cal-nav{display:flex;gap:6px;flex:none}
 .cal-nav .btn{padding:6px 10px}
+@media(max-width:520px){.paper{width:68px}.paper .sheet{width:68px;height:82px}.paper .foil{width:36px;height:36px;font-size:13px}.paper .nm{font-size:13px}.combo{gap:6px}.combo .plus{font-size:18px}}

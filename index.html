@@ -126,6 +126,7 @@ let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(dra
   function eventsOn(date){
     const l = L.lunarOf(date), out = [];
     for (const e of B.days){
+      if (e.only && !e.roles.includes(ROLE)) continue;
       if (e.rule === 'monthly' && e.d.includes(l.d)) out.push(e);
       else if (e.rule === 'lunar' && !l.leap && l.m === e.m && l.d === e.d) out.push(e);
       else if (e.rule === 'monthEnd' && !l.leap && l.m === e.m){ const n = L.lunarOf(new Date(date.getTime() + DAY)); if (n.m !== e.m || n.leap) out.push(e); }

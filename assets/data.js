@@ -104,6 +104,14 @@ occasions: [
 
 roles: {home:'一般家庭', fisher:'討海人（漁民）', farmer:'作穡人（農民）', shop:'做生意（商家）', factory:'工廠'},
 
+temples: [
+  {id:'mazu', name:'媽祖廟', who:'媽祖（天上聖母）', paper:'大箔壽金、壽金、刈金、福金（四色金）', offer:'紅湯圓、麵線、發糕、紅龜粿、鮮花（成對，不用假花）、清茶三杯', extra:'金山在地：金包里慈護宮。農曆三月廿三媽祖生，四月十六前後二媽回娘家'},
+  {id:'caishen', name:'財神廟', who:'五路財神、文武財神', paper:'壽金、刈金、福金、五路財神金', offer:'糖果、餅乾等甜食，水果三或五樣', extra:'民間說法：避開蓮霧（空心）與「酥」類點心；拜武財神不用豬肉。金山在地：萬里公館崙的金山財神廟'},
+  {id:'tudi', name:'土地公廟', who:'福德正神', paper:'壽金、刈金、福金（三色金）', offer:'發糕、麻糬、刈包、潤餅；水果可選香蕉、李子、鳳梨（招你旺）', extra:'初二、十六做牙；二月初二頭牙、十二月十六尾牙最熱鬧'},
+  {id:'dazhong', name:'大眾爺廟', who:'大眾爺', paper:'金紙種類與份量依各廟與各家習慣，歡迎到店詢問', extra:'各地拜法差異較大，也可先請教廟方'}
+],
+templeTip: '到廟裡拜拜，先拜天公爐再拜主神；有些廟宇集中焚化或不燒金紙，請依廟方規定。',
+
 fire: {
   trad: '開工、喜慶傳統上使用紅紙鞭炮，可向店內詢問。請依各地法規及燃放時段規定。',
   eco: '一般祭祀如需燃放鞭炮，建議使用環保鞭炮，並依各地法規及燃放時段規定。'
@@ -131,6 +139,10 @@ sources: [
   ['新頭殼：金包里二媽回野柳媽祖洞','https://newtalk.tw/news/view/2022-05-16/755679'],
   ['聯合新聞網：神農大帝聖誕','https://udn.com/news/story/7268/9559983'],
   ['Yahoo 新聞：水仙尊王','https://tw.news.yahoo.com/tag/水仙尊王'],
+  ['TVBS：拜土地公供品與金紙','https://health.tvbs.com.tw/life/352227'],
+  ['蝦皮生活誌：拜土地公三色金','https://shopee.tw/blog/land-worship/'],
+  ['蕃薯藤旅遊：拜財神供品','https://travel.yam.com/article/136653'],
+  ['TVBS：財神廟參拜','https://health.tvbs.com.tw/nutrition/360367'],
   ['關鍵評論網：紙錢整理','https://www.thenewslens.com/article/147154']
 ]
 };

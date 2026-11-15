@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>廟宇祭祀｜媽祖廟、財神廟、土地公廟要準備什麼金紙｜金山謝鈺豐香店</title>
+<meta name="description" content="到媽祖廟、財神廟、土地公廟、大眾爺廟拜拜，要準備哪些金紙與供品。金山謝鈺豐香店整理。">
+<link rel="stylesheet" href="/assets/style.css?v=20261115i">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/"><span class="seal">香</span><span class="t">謝鈺豐香店</span></a>
+  <nav><a href="/jieri/">節日</a><a href="/hunsang/">婚喪喜慶</a><a href="/miaoyu/" aria-current="page">廟宇</a><a href="/mingcheng/">金紙名稱</a></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="page-head">
+    <h1>廟宇祭祀</h1>
+    <p>點開廟宇，看要準備的金紙與供品。點金紙名稱可以看說明。</p>
+  </div>
+  <div id="cats"></div>
+</main>
+
+<footer><div class="wrap" id="foot"></div></footer>
+
+<script src="/assets/data.js?v=20261115i"></script>
+<script src="/assets/common.js?v=20261115i"></script>
+<script>
+(function(){
+  const B = BAIBAI, NAMES = '/mingcheng/';
+  document.getElementById('cats').innerHTML = '<p class="notice" style="margin:0 0 14px">' + B.templeTip + '</p>' + B.temples.map(t =>
+    '<details class="cat" id="' + t.id + '"><summary>' + ICONS.temple + '<span class="cat-name">' + t.name + '</span><span class="muted">' + t.who + '</span><span class="chev" aria-hidden="true">›</span></summary><div style="padding:0 16px 16px">' + templeCard(t, NAMES) + '</div></details>').join('');
+  const h = location.hash.slice(1), el = h && document.getElementById(h);
+  if (el){ el.open = true; el.scrollIntoView(); }
+  renderSources(document.getElementById('foot'));
+})();
+</script>
+</body>
+</html>

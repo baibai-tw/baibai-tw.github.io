@@ -161,9 +161,10 @@ let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(dra
       path = '<path d="M' + c + ' ' + (c - r) + ' A' + r + ' ' + r + ' 0 0 ' + s1 + ' ' + c + ' ' + (c + r) + ' A' + k.toFixed(1) + ' ' + r + ' 0 0 ' + s2 + ' ' + c + ' ' + (c - r) + 'Z" fill="#c9a24a"/>'; }
     return '<svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#ebe4d4" stroke="#b9ae97"/>' + path + '</svg>';
   }
+  const cn = n => { const D = '〇一二三四五六七八九'; return n <= 10 ? (n === 10 ? '十' : D[n]) : n < 20 ? '十' + D[n - 10] : D[Math.floor(n / 10)] + '十' + (n % 10 ? D[n % 10] : ''); };
   const md = d => (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.getUTCDay()] + '）';
   const l0 = L.lunarOf(today);
-  document.getElementById('today').innerHTML = '<div class="big">' + (l0.leap ? '閏' : '') + L.monthName(l0.m) + L.dayName(l0.d) + '</div><div class="sm">' + gz(l0.y).replace(/（.*）/, '') + '・國曆 ' + md(today) + '</div>' + moon(l0.d);
+  document.getElementById('today').innerHTML = '<div class="big">' + (l0.leap ? '閏' : '') + L.monthName(l0.m) + L.dayName(l0.d) + '</div><div class="sm">' + gz(l0.y).replace(/（.*）/, '') + '・國曆' + cn(today.getUTCMonth() + 1) + '月' + cn(today.getUTCDate()) + '日・週' + WD[today.getUTCDay()] + '</div>' + moon(l0.d);
   let w = '';
   for (let i = 0; i < 7; i++){
     const dt = new Date(today.getTime() + i * DAY), { l, ev } = eventsOn(dt);

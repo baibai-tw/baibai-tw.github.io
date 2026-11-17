@@ -19,10 +19,10 @@
   .title p{margin:0;font-family:var(--serif);font-size:clamp(13px,min(2.4vw,2.2vh),18px);letter-spacing:.2em;color:#3d3932;white-space:nowrap}
   .title .seal{writing-mode:horizontal-tb;width:30px;height:30px;font-size:14px}
   .panel{overflow-y:auto;border-top:1px solid var(--line);padding:12px max(16px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
-  .today{position:absolute;top:max(18px,env(safe-area-inset-top));left:max(18px,env(safe-area-inset-left));display:flex;gap:10px;align-items:flex-start;writing-mode:vertical-rl;pointer-events:none}
-  .today .big{font-family:var(--serif);font-size:clamp(34px,min(7.5vw,7vh),68px);font-weight:700;letter-spacing:.2em;color:#1b1916;white-space:nowrap;line-height:1}
-  .today .sm{font-family:var(--serif);font-size:clamp(12px,min(2.2vw,2vh),16px);letter-spacing:.15em;color:#4a453c;white-space:nowrap}
-  .today svg{writing-mode:horizontal-tb;flex:none}
+  .todayv{position:absolute;top:max(18px,env(safe-area-inset-top));left:max(18px,env(safe-area-inset-left));display:flex;gap:10px;align-items:flex-start;writing-mode:vertical-rl;pointer-events:none}
+  .todayv .big{font-family:var(--serif);font-size:clamp(34px,min(7.5vw,7vh),68px);font-weight:700;letter-spacing:.2em;color:#1b1916;white-space:nowrap;line-height:1}
+  .todayv .sm{font-family:var(--serif);font-size:clamp(12px,min(2.2vw,2vh),16px);letter-spacing:.15em;color:#4a453c;white-space:nowrap}
+  .todayv svg{writing-mode:horizontal-tb;flex:none}
   .shopline{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 4px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-family:var(--serif);font-size:14px;letter-spacing:.12em;color:var(--ink-2);text-align:center}
   .shopline .seal{width:20px;height:20px;font-size:11px;flex:none}
   .shopline b{font-weight:700;color:var(--ink)}
@@ -61,7 +61,7 @@
 <body>
 <div class="stage">
   <div id="scene" aria-hidden="true"></div>
-  <div class="today" id="today"></div>
+  <div class="todayv" id="today"></div>
   <div class="title"><h1>拜拜</h1><p>金紙與祭祀參考</p><span class="seal">香</span></div>
 </div>
 

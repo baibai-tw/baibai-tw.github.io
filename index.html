@@ -126,8 +126,8 @@ function drawScene(){
   /* 下方留白：淡霧鋪底，讓香塔四周乾淨 */
   svg += '<rect x="0" y="1120" width="' + W + '" height="' + (H - 1120) + '" fill="url(#ground)"/>' +
     '<ellipse cx="' + (W * .66) + '" cy="1475" rx="' + Math.min(W * .3, 260) + '" ry="10" fill="#d8cfbe" opacity=".6" filter="url(#b0)"/>';
-  /* 前景：卵石上的香塔與一縷煙 */
-  svg += '<g transform="translate(' + (W * .66) + ' 1400' + ') scale(1.5)"><ellipse cx="0" cy="40" rx="70" ry="22" fill="#24221f"/><ellipse cx="6" cy="10" rx="48" ry="17" fill="#3a3732"/><ellipse cx="-2" cy="-14" rx="30" ry="11" fill="#4a463f"/>' +
+  /* 前景：一顆卵石上的香塔與一縷煙 */
+  svg += '<g transform="translate(' + (W * .66) + ' 1460' + ') scale(1.5)"><ellipse cx="0" cy="0" rx="70" ry="22" fill="#24221f"/>' +
     '<path d="M-14 -22 L0 -64 L14 -22 Z" fill="#6b4a2e"/><circle cx="0" cy="-66" r="2.5" fill="#d0673f"/>' +
     '<defs><linearGradient id="smg" gradientUnits="userSpaceOnUse" x1="0" y1="-70" x2="0" y2="-350"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset=".72" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
     '<linearGradient id="smd" gradientUnits="userSpaceOnUse" x1="0" y1="-70" x2="0" y2="-350"><stop offset="0" stop-color="#6f695e" stop-opacity="1"/><stop offset=".72" stop-color="#6f695e" stop-opacity="1"/><stop offset="1" stop-color="#6f695e" stop-opacity="0"/></linearGradient>' +

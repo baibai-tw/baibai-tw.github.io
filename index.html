@@ -126,8 +126,8 @@ function drawScene(){
   /* 下方留白：淡霧鋪底，讓香塔四周乾淨 */
   svg += '<rect x="0" y="1120" width="' + W + '" height="' + (H - 1120) + '" fill="url(#ground)"/>' +
     '<ellipse cx="' + (W * .66) + '" cy="1475" rx="' + Math.min(W * .3, 260) + '" ry="10" fill="#d8cfbe" opacity=".6" filter="url(#b0)"/>';
-  /* 前景：卵石上的香塔與一縷煙 */
-  svg += '<g transform="translate(' + (W * .66) + ' 1400' + ') scale(1.5)"><ellipse cx="0" cy="40" rx="70" ry="22" fill="#24221f"/><ellipse cx="6" cy="10" rx="48" ry="17" fill="#3a3732"/><ellipse cx="-2" cy="-14" rx="30" ry="11" fill="#4a463f"/>' +
+  /* 前景：一顆卵石上的香塔與一縷煙 */
+  svg += '<g transform="translate(' + (W * .66) + ' 1460' + ') scale(1.5)"><defs><radialGradient id="rk" cx=".38" cy=".18" r=".9"><stop offset="0" stop-color="#7a7368"/><stop offset=".35" stop-color="#47423b"/><stop offset=".75" stop-color="#25221f"/><stop offset="1" stop-color="#141311"/></radialGradient><filter id="rkb"><feGaussianBlur stdDeviation="3"/></filter></defs><ellipse cx="0" cy="0" rx="70" ry="24" fill="url(#rk)"/><ellipse cx="-20" cy="-12" rx="26" ry="6" fill="#a39b8c" opacity=".35" filter="url(#rkb)"/><g transform="translate(16 0)"><ellipse cx="0" cy="-21" rx="17" ry="3.5" fill="#0f0e0c" opacity=".55" filter="url(#sm2)"/>' +
     '<path d="M-14 -22 L0 -64 L14 -22 Z" fill="#6b4a2e"/><circle cx="0" cy="-66" r="2.5" fill="#d0673f"/>' +
     '<defs><linearGradient id="smg" gradientUnits="userSpaceOnUse" x1="0" y1="-70" x2="0" y2="-350"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset=".72" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
     '<linearGradient id="smd" gradientUnits="userSpaceOnUse" x1="0" y1="-70" x2="0" y2="-350"><stop offset="0" stop-color="#6f695e" stop-opacity="1"/><stop offset=".72" stop-color="#6f695e" stop-opacity="1"/><stop offset="1" stop-color="#6f695e" stop-opacity="0"/></linearGradient>' +
@@ -136,7 +136,7 @@ function drawScene(){
     '<path d="M0 -70 L0 -215 C0 -245 -15 -258 -9 -284 S10 -318 3 -350" transform="translate(1.5 1.5)" fill="none" stroke="url(#smd)" stroke-width="5" stroke-linecap="round" opacity=".5" filter="url(#sm1)"/>' +
     '<path d="M0 -70 L0 -215 C0 -245 -15 -258 -9 -284 S10 -318 3 -350" fill="none" stroke="url(#smg)" stroke-width="10" stroke-linecap="round" opacity=".7" filter="url(#sm1)"/>' +
     '<path d="M0 -70 L0 -215 C0 -245 -15 -258 -9 -284 S10 -318 3 -350" fill="none" stroke="url(#smg)" stroke-width="3" stroke-linecap="round" filter="url(#sm2)"/>' +
-    '</g></g>' +
+    '</g></g></g>' +
     '<rect width="100%" height="100%" filter="url(#grain)"/></svg>';
   document.getElementById('scene').innerHTML = svg;
 }

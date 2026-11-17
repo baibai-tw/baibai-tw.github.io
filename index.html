@@ -19,13 +19,14 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="/assets/style.css?v=20261117d">
+<link rel="stylesheet" href="/assets/style.css?v=20261118a">
 <style>
   html,body{height:100%}
   body{margin:0;overflow:hidden;display:grid;grid-template-rows:60% 40%;height:100dvh;background:var(--paper)}
   .stage{position:relative;overflow:hidden;background:#e9e3d6}
-  #scene{position:absolute;inset:0}
-  #scene svg,#scene iframe{width:100%;height:100%;display:block;border:0}
+  #poster img,#mojing{position:absolute;inset:0;width:100%;height:100%;display:block;border:0;object-fit:cover}
+  #mojing{opacity:0;transition:opacity 1.2s ease;pointer-events:none}
+  #mojing.on{opacity:1}
   .title{position:absolute;top:max(18px,env(safe-area-inset-top));right:max(18px,env(safe-area-inset-right));display:flex;gap:12px;align-items:flex-start;writing-mode:vertical-rl;pointer-events:none}
   .title h1{margin:0;font-size:clamp(40px,min(9vw,8vh),80px);letter-spacing:.3em;color:#1b1916;white-space:nowrap}
   .title p{margin:0;font-family:var(--serif);font-size:clamp(13px,min(2.4vw,2.2vh),18px);letter-spacing:.2em;color:#3d3932;white-space:nowrap}
@@ -77,7 +78,8 @@
 </head>
 <body>
 <div class="stage">
-  <div id="scene" aria-hidden="true"></div>
+  <picture id="poster" aria-hidden="true"><source media="(orientation:landscape) and (min-width:700px)" srcset="/assets/mojing/cover-16x10.webp"><img src="/assets/mojing/cover-3x4.webp" alt=""></picture>
+  <iframe id="mojing" src="/assets/mojing/embed.html?embed=1" title="墨竹香塔動畫" allow="autoplay" tabindex="-1" aria-hidden="true"></iframe>
   <div class="todayv" id="today"></div>
   <h1 class="sr">拜拜｜金紙與祭祀參考｜謝鈺豐香店</h1>
 </div>
@@ -96,64 +98,20 @@
   <p class="lead">祭祀，是思念的延續。金紙不在多，心意最重要。</p>
 </main>
 
-<script src="/assets/data.js?v=20261117d"></script>
-<script src="/assets/lunar.js?v=20261117d"></script>
-<script src="/assets/common.js?v=20261117d"></script>
+<script src="/assets/data.js?v=20261118a"></script>
+<script src="/assets/lunar.js?v=20261118a"></script>
+<script src="/assets/common.js?v=20261118a"></script>
 <script>
 
 /* 靜態水墨佔位圖：之後換成動態主視覺（WebGPU），不支援的裝置仍顯示這張 */
-function drawScene(){
-  const sc = document.getElementById('scene');
-  const H = 1600, W = Math.round(H * Math.max(.45, Math.min(2.4, sc.clientWidth / Math.max(1, sc.clientHeight))));
-  let seed = 7;
-  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  /* 平滑山脊：幾個正弦波疊加＋少量雜訊 */
-  function ridge(base, amp, waves){
-    const ph = waves.map(() => rnd() * 6.28), pts = [];
-    let v = 0;
-    for (let x = -40; x <= W + 40; x += 8){
-      v = v * .9 + (rnd() - .5) * .08;
-      let y = base;
-      waves.forEach((w, i) => y -= Math.pow(Math.max(0, Math.sin(x / w + ph[i])), 1.6) * amp * (1 - i * .25));
-      pts.push([x, y + v * amp]);
-    }
-    return 'M-40,' + H + ' ' + pts.map(p => 'L' + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' L' + (W + 40) + ',' + H + 'Z';
-  }
-  const layers = [
-    {b:900, a:260, w:[260,120,60], c:'#b9b3a6', o:.5, blur:6},
-    {b:1010, a:300, w:[200,90,45], c:'#8f897d', o:.55, blur:4},
-    {b:1140, a:240, w:[170,70,35], c:'#5e5a52', o:.65, blur:2.5}
-  ];
-  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">' +
-    '<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efeae0"/><stop offset=".6" stop-color="#e6dfd1"/><stop offset="1" stop-color="#ddd5c4"/></linearGradient>' +
-    '<linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ece6da" stop-opacity="0"/><stop offset=".45" stop-color="#ece6da" stop-opacity=".96"/><stop offset="1" stop-color="#e8e1d3"/></linearGradient>' +
-    '<linearGradient id="mist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ebe5d9" stop-opacity="0"/><stop offset=".5" stop-color="#ebe5d9" stop-opacity=".85"/><stop offset="1" stop-color="#ebe5d9" stop-opacity="0"/></linearGradient>';
-  layers.forEach((l, i) => svg += '<filter id="b' + i + '"><feGaussianBlur stdDeviation="' + l.blur + '"/></filter>');
-  svg += '<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/><feColorMatrix values="0 0 0 0 .3  0 0 0 0 .27  0 0 0 0 .22  0 0 0 .06 0"/></filter></defs>' +
-    '<rect width="100%" height="100%" fill="url(#sky)"/><circle cx="' + (W * .5) + '" cy="520" r="64" fill="#b8503c" opacity=".12"/>';
-  layers.forEach((l, i) => {
-    svg += '<path d="' + ridge(l.b, l.a, l.w) + '" fill="' + l.c + '" opacity="' + l.o + '" filter="url(#b' + i + ')"/>';
-    if (i < 3) svg += '<rect x="0" y="' + (l.b + 40) + '" width="' + W + '" height="160" fill="url(#mist)"/>';
+(function(){
+  const mj = document.getElementById('mojing');
+  addEventListener('message', e => {
+    if (e.source !== mj.contentWindow || !e.data) return;
+    if (e.data.mojing === 'ready') mj.classList.add('on');
+    if (e.data.mojing === 'unsupported') mj.remove();
   });
-  /* 下方留白：淡霧鋪底，讓香塔四周乾淨 */
-  svg += '<rect x="0" y="1120" width="' + W + '" height="' + (H - 1120) + '" fill="url(#ground)"/>' +
-    '<ellipse cx="' + (W * .66) + '" cy="1475" rx="' + Math.min(W * .3, 260) + '" ry="10" fill="#d8cfbe" opacity=".6" filter="url(#b0)"/>';
-  /* 前景：一顆卵石上的香塔與一縷煙 */
-  svg += '<g transform="translate(' + (W * .66) + ' 1460' + ') scale(1.5)"><defs><radialGradient id="rk" cx=".38" cy=".18" r=".9"><stop offset="0" stop-color="#7a7368"/><stop offset=".35" stop-color="#47423b"/><stop offset=".75" stop-color="#25221f"/><stop offset="1" stop-color="#141311"/></radialGradient><filter id="rkb"><feGaussianBlur stdDeviation="3"/></filter></defs><ellipse cx="0" cy="0" rx="70" ry="24" fill="url(#rk)"/><ellipse cx="-20" cy="-12" rx="26" ry="6" fill="#a39b8c" opacity=".35" filter="url(#rkb)"/><g transform="translate(16 0)"><ellipse cx="0" cy="-21" rx="17" ry="3.5" fill="#0f0e0c" opacity=".55" filter="url(#sm2)"/>' +
-    '<path d="M-14 -22 L0 -64 L14 -22 Z" fill="#6b4a2e"/><circle cx="0" cy="-66" r="2.5" fill="#d0673f"/>' +
-    '<defs><linearGradient id="smg" gradientUnits="userSpaceOnUse" x1="0" y1="-70" x2="0" y2="-350"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset=".72" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
-    '<linearGradient id="smd" gradientUnits="userSpaceOnUse" x1="0" y1="-70" x2="0" y2="-350"><stop offset="0" stop-color="#6f695e" stop-opacity="1"/><stop offset=".72" stop-color="#6f695e" stop-opacity="1"/><stop offset="1" stop-color="#6f695e" stop-opacity="0"/></linearGradient>' +
-    '<filter id="sm1" x="-200%" y="-10%" width="500%" height="120%"><feGaussianBlur stdDeviation="3"/></filter><filter id="sm2" x="-200%" y="-10%" width="500%" height="120%"><feGaussianBlur stdDeviation="0.8"/></filter></defs>' +
-    '<g opacity=".3">' +
-    '<path d="M0 -70 L0 -215 C0 -245 -15 -258 -9 -284 S10 -318 3 -350" transform="translate(1.5 1.5)" fill="none" stroke="url(#smd)" stroke-width="5" stroke-linecap="round" opacity=".5" filter="url(#sm1)"/>' +
-    '<path d="M0 -70 L0 -215 C0 -245 -15 -258 -9 -284 S10 -318 3 -350" fill="none" stroke="url(#smg)" stroke-width="10" stroke-linecap="round" opacity=".7" filter="url(#sm1)"/>' +
-    '<path d="M0 -70 L0 -215 C0 -245 -15 -258 -9 -284 S10 -318 3 -350" fill="none" stroke="url(#smg)" stroke-width="3" stroke-linecap="round" filter="url(#sm2)"/>' +
-    '</g></g></g>' +
-    '<rect width="100%" height="100%" filter="url(#grain)"/></svg>';
-  document.getElementById('scene').innerHTML = svg;
-}
-drawScene();
-let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawScene, 200); });
+})();
 
 
 (function(){

@@ -27,8 +27,6 @@
   #poster img,#mojing{position:absolute;inset:0;width:100%;height:100%;display:block;border:0;object-fit:cover}
   #mojing{opacity:0;transition:opacity 1.2s ease;pointer-events:none}
   #mojing.on{opacity:1}
-  .snd{position:absolute;right:max(12px,env(safe-area-inset-right));bottom:12px;z-index:2;font-family:var(--serif);font-size:12px;letter-spacing:.15em;color:var(--ink-2);background:rgba(243,238,227,.75);border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer}
-  .snd[aria-pressed=true]{color:var(--red);border-color:var(--red)}
   .title{position:absolute;top:max(18px,env(safe-area-inset-top));right:max(18px,env(safe-area-inset-right));display:flex;gap:12px;align-items:flex-start;writing-mode:vertical-rl;pointer-events:none}
   .title h1{margin:0;font-size:clamp(40px,min(9vw,8vh),80px);letter-spacing:.3em;color:#1b1916;white-space:nowrap}
   .title p{margin:0;font-family:var(--serif);font-size:clamp(13px,min(2.4vw,2.2vh),18px);letter-spacing:.2em;color:#3d3932;white-space:nowrap}
@@ -82,7 +80,6 @@
 <div class="stage">
   <picture id="poster" aria-hidden="true"><source media="(orientation:landscape) and (min-width:700px)" srcset="/assets/mojing/cover-16x10.webp"><img src="/assets/mojing/cover-3x4.webp" alt=""></picture>
   <iframe id="mojing" src="/assets/mojing/embed.html?embed=1" title="墨竹香塔動畫" allow="autoplay" tabindex="-1" aria-hidden="true"></iframe>
-  <button class="snd" id="snd" type="button" hidden aria-pressed="false">聲音 關</button>
   <div class="todayv" id="today"></div>
   <h1 class="sr">拜拜｜金紙與祭祀參考｜謝鈺豐香店</h1>
 </div>
@@ -108,16 +105,11 @@
 
 /* 靜態水墨佔位圖：之後換成動態主視覺（WebGPU），不支援的裝置仍顯示這張 */
 (function(){
-  const mj = document.getElementById('mojing'), snd = document.getElementById('snd');
-  let on = false;
+  const mj = document.getElementById('mojing');
   addEventListener('message', e => {
     if (e.source !== mj.contentWindow || !e.data) return;
-    if (e.data.mojing === 'ready'){ mj.classList.add('on'); snd.hidden = false; }
+    if (e.data.mojing === 'ready') mj.classList.add('on');
     if (e.data.mojing === 'unsupported') mj.remove();
-  });
-  snd.addEventListener('click', () => {
-    on = !on; snd.setAttribute('aria-pressed', on); snd.textContent = '聲音 ' + (on ? '開' : '關');
-    mj.contentWindow.postMessage({ sound: on }, location.origin);
   });
 })();
 

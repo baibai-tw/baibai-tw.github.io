@@ -7,7 +7,7 @@
 <meta name="description" content="金山謝鈺豐香店整理：拜拜要準備什麼金紙？農曆節日、初一十五、做牙、婚喪喜慶的金紙準備參考，以及壽金、刈金、福金等金紙名稱說明。">
 <meta property="og:title" content="拜拜｜金紙與祭祀參考｜金山謝鈺豐香店">
 <meta property="og:description" content="農曆節日、婚喪喜慶該準備哪些金紙，一查就知道。">
-<link rel="stylesheet" href="/assets/style.css?v=20261117b">
+<link rel="stylesheet" href="/assets/style.css?v=20261117c">
 <style>
   html,body{height:100%}
   body{margin:0;overflow:hidden;display:grid;grid-template-rows:60% 40%;height:100dvh;background:var(--paper)}
@@ -35,6 +35,7 @@
   .p-date{flex:1;min-width:0}
   .p-date .big{font-family:var(--serif);font-size:24px;font-weight:700;line-height:1.25}
   .p-date .sm{font-size:13px;color:var(--mute)}
+  .p-date .ev{color:var(--red)}
   .p-shop{font-family:var(--serif);font-size:13px;color:var(--red);letter-spacing:.15em;text-align:right}
   .week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
   .week a{display:flex;flex-direction:column;align-items:center;padding:5px 0 4px;border-radius:8px;background:var(--card);border:1px solid var(--line);text-decoration:none;color:var(--ink);min-width:0}
@@ -57,7 +58,7 @@
   @media (orientation:landscape) and (min-width:700px){
     body{grid-template-rows:none;grid-template-columns:40% 60%}
     .panel{order:-1;border-top:0;border-right:1px solid var(--line);padding:24px;justify-content:center;gap:14px}
-    .p-date .big{font-size:30px}
+    .p-date .big{font-size:26px}
     .week a .l{font-size:16px}
   }
 </style>
@@ -70,6 +71,7 @@
 </div>
 
 <main class="panel" id="panel">
+  <div class="p-top" id="ptoday"></div>
   <div class="week" id="week" aria-label="這七天"></div>
   <a class="next" id="next" href="/jieri/"></a>
   <p class="sub">金紙與祭祀參考</p>
@@ -83,9 +85,9 @@
   <p class="lead">祭祀，是思念的延續。金紙不在多，心意最重要。</p>
 </main>
 
-<script src="/assets/data.js?v=20261117b"></script>
-<script src="/assets/lunar.js?v=20261117b"></script>
-<script src="/assets/common.js?v=20261117b"></script>
+<script src="/assets/data.js?v=20261117c"></script>
+<script src="/assets/lunar.js?v=20261117c"></script>
+<script src="/assets/common.js?v=20261117c"></script>
 <script>
 
 /* 靜態水墨佔位圖：之後換成動態主視覺（WebGPU），不支援的裝置仍顯示這張 */
@@ -169,7 +171,9 @@ let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(dra
   const cn = n => { const D = '〇一二三四五六七八九'; return n <= 10 ? (n === 10 ? '十' : D[n]) : n < 20 ? '十' + D[n - 10] : D[Math.floor(n / 10)] + '十' + (n % 10 ? D[n % 10] : ''); };
   const md = d => (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.getUTCDay()] + '）';
   const l0 = L.lunarOf(today);
-  document.getElementById('today').innerHTML = '<div class="big">' + (l0.leap ? '閏' : '') + L.monthName(l0.m) + L.dayName(l0.d) + '</div><div class="col">' + moon(l0.d).replace('width="48" height="48"', 'width="30" height="30"') + '<div class="sm">' + gz(l0.y).replace(/（.*）/, '') + '・國曆' + cn(today.getUTCMonth() + 1) + '月' + cn(today.getUTCDate()) + '日・週' + WD[today.getUTCDay()] + '</div></div>';
+  document.getElementById('today').innerHTML = '<div class="big">' + (l0.leap ? '閏' : '') + L.monthName(l0.m) + L.dayName(l0.d) + '</div><div class="col">' + moon(l0.d).replace('width="48" height="48"', 'width="30" height="30"') + '<div class="sm">' + gz(l0.y).replace(/（.*）/, '') + '</div></div>';
+  const ev0 = eventsOn(today).ev;
+  document.getElementById('ptoday').innerHTML = moon(l0.d).replace('width="48" height="48"', 'width="40" height="40"') + '<div class="p-date"><div class="big">農曆' + L.label(l0) + '</div><div class="sm">' + gz(l0.y) + '・國曆 ' + today.getUTCFullYear() + ' 年 ' + (today.getUTCMonth() + 1) + ' 月 ' + today.getUTCDate() + ' 日・週' + WD[today.getUTCDay()] + '</div>' + (ev0.length ? '<div class="sm ev">今日：' + ev0.map(e => e.name.split('・')[0]).join('、') + '</div>' : '') + '</div>';
   let w = '';
   for (let i = 0; i < 7; i++){
     const dt = new Date(today.getTime() + i * DAY), { l, ev } = eventsOn(dt);

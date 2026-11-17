@@ -7,7 +7,7 @@
 <meta name="description" content="金山謝鈺豐香店整理：拜拜要準備什麼金紙？農曆節日、初一十五、做牙、婚喪喜慶的金紙準備參考，以及壽金、刈金、福金等金紙名稱說明。">
 <meta property="og:title" content="拜拜｜金紙與祭祀參考｜金山謝鈺豐香店">
 <meta property="og:description" content="農曆節日、婚喪喜慶該準備哪些金紙，一查就知道。">
-<link rel="stylesheet" href="/assets/style.css?v=20261115j">
+<link rel="stylesheet" href="/assets/style.css?v=20261117a">
 <style>
   html,body{height:100%}
   body{margin:0;overflow:hidden;display:grid;grid-template-rows:60% 40%;height:100dvh;background:var(--paper)}
@@ -19,6 +19,13 @@
   .title p{margin:0;font-family:var(--serif);font-size:clamp(13px,min(2.4vw,2.2vh),18px);letter-spacing:.2em;color:#3d3932;white-space:nowrap}
   .title .seal{writing-mode:horizontal-tb;width:30px;height:30px;font-size:14px}
   .panel{overflow-y:auto;border-top:1px solid var(--line);padding:12px max(16px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+  .today{position:absolute;top:max(18px,env(safe-area-inset-top));left:max(18px,env(safe-area-inset-left));display:flex;gap:10px;align-items:flex-start;writing-mode:vertical-rl;pointer-events:none}
+  .today .big{font-family:var(--serif);font-size:clamp(34px,min(7.5vw,7vh),68px);font-weight:700;letter-spacing:.2em;color:#1b1916;white-space:nowrap;line-height:1}
+  .today .sm{font-family:var(--serif);font-size:clamp(12px,min(2.2vw,2vh),16px);letter-spacing:.15em;color:#4a453c;white-space:nowrap}
+  .today svg{writing-mode:horizontal-tb;flex:none}
+  .shopline{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 4px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-family:var(--serif);font-size:14px;letter-spacing:.12em;color:var(--ink-2);text-align:center}
+  .shopline .seal{width:20px;height:20px;font-size:11px;flex:none}
+  .shopline b{font-weight:700;color:var(--ink)}
   .p-top{display:flex;align-items:center;gap:12px}
   .p-top svg{flex:none}
   .p-date{flex:1;min-width:0}
@@ -54,11 +61,11 @@
 <body>
 <div class="stage">
   <div id="scene" aria-hidden="true"></div>
+  <div class="today" id="today"></div>
   <div class="title"><h1>拜拜</h1><p>金紙與祭祀參考</p><span class="seal">香</span></div>
 </div>
 
 <main class="panel" id="panel">
-  <div class="p-top" id="pTop"></div>
   <div class="week" id="week" aria-label="這七天"></div>
   <a class="next" id="next" href="/jieri/"></a>
   <nav class="menu" aria-label="主選單">
@@ -67,12 +74,13 @@
     <a href="/miaoyu/">廟宇祭祀</a>
     <a href="/mingcheng/">金紙名稱</a>
   </nav>
+  <div class="shopline"><span class="seal">香</span><span><b>謝鈺豐香店</b>　店舖自製手工香塔・淨香末　歡迎到店品香</span></div>
   <p class="lead">祭祀，是思念的延續。金紙不在多，心意最重要。</p>
 </main>
 
-<script src="/assets/data.js?v=20261115j"></script>
-<script src="/assets/lunar.js?v=20261115j"></script>
-<script src="/assets/common.js?v=20261115j"></script>
+<script src="/assets/data.js?v=20261117a"></script>
+<script src="/assets/lunar.js?v=20261117a"></script>
+<script src="/assets/common.js?v=20261117a"></script>
 <script>
 
 /* 靜態水墨佔位圖：之後換成動態主視覺（WebGPU），不支援的裝置仍顯示這張 */
@@ -104,7 +112,7 @@ function drawScene(){
     '<linearGradient id="mist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ebe5d9" stop-opacity="0"/><stop offset=".5" stop-color="#ebe5d9" stop-opacity=".85"/><stop offset="1" stop-color="#ebe5d9" stop-opacity="0"/></linearGradient>';
   layers.forEach((l, i) => svg += '<filter id="b' + i + '"><feGaussianBlur stdDeviation="' + l.blur + '"/></filter>');
   svg += '<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/><feColorMatrix values="0 0 0 0 .3  0 0 0 0 .27  0 0 0 0 .22  0 0 0 .06 0"/></filter></defs>' +
-    '<rect width="100%" height="100%" fill="url(#sky)"/><circle cx="' + (W * .3) + '" cy="520" r="64" fill="#b8503c" opacity=".12"/>';
+    '<rect width="100%" height="100%" fill="url(#sky)"/><circle cx="' + (W * .5) + '" cy="520" r="64" fill="#b8503c" opacity=".12"/>';
   layers.forEach((l, i) => {
     svg += '<path d="' + ridge(l.b, l.a, l.w) + '" fill="' + l.c + '" opacity="' + l.o + '" filter="url(#b' + i + ')"/>';
     if (i < 3) svg += '<rect x="0" y="' + (l.b + 40) + '" width="' + W + '" height="160" fill="url(#mist)"/>';
@@ -155,7 +163,7 @@ let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(dra
   }
   const md = d => (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.getUTCDay()] + '）';
   const l0 = L.lunarOf(today);
-  document.getElementById('pTop').innerHTML = moon(l0.d) + '<div class="p-date"><div class="sm">今天・' + gz(l0.y) + '</div><div class="big">農曆' + L.label(l0) + '</div><div class="sm">國曆 ' + today.getUTCFullYear() + '/' + md(today) + '</div></div><div class="p-shop">金山<br>謝鈺豐香店</div>';
+  document.getElementById('today').innerHTML = '<div class="big">' + (l0.leap ? '閏' : '') + L.monthName(l0.m) + L.dayName(l0.d) + '</div><div class="sm">' + gz(l0.y).replace(/（.*）/, '') + '・國曆 ' + md(today) + '</div>' + moon(l0.d);
   let w = '';
   for (let i = 0; i < 7; i++){
     const dt = new Date(today.getTime() + i * DAY), { l, ev } = eventsOn(dt);

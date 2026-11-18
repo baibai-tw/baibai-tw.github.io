@@ -41,7 +41,9 @@
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   .sub{margin:2px 0 -2px;font-family:var(--serif);font-size:15px;letter-spacing:.3em;color:var(--ink-2);text-align:center}
   .shopline{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 4px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-family:var(--serif);font-size:14px;letter-spacing:.12em;color:var(--ink-2);text-align:center}
-  .shopline .seal{width:20px;height:20px;font-size:11px;flex:none}
+  .shopline .seal{width:20px;height:20px;font-size:11px;flex:none;border:0;padding:0;cursor:pointer;font-family:var(--serif);transition:transform .2s}
+  .shopline .seal:hover,.shopline .seal:focus-visible{transform:scale(1.15)}
+  .shopline .seal:active{transform:scale(.92)}
   .shopline b{font-weight:700;color:var(--ink)}
   .p-top{display:flex;align-items:center;gap:12px}
   .p-top svg{flex:none}
@@ -81,20 +83,26 @@
   <picture id="poster" aria-hidden="true"><source id="poster-w" media="(orientation:landscape) and (min-width:700px)"><img id="poster-p" alt=""></picture>
   <iframe id="mojing" title="墨景" tabindex="-1" aria-hidden="true"></iframe>
   <script>
-  /* 首頁主視覺：兩套墨景隨機播放。新增一套就在 MJ 加一行；沒有備用圖的填 null */
-  (function(){
-    const V = '20261119a', D = '/assets/mojing/';
+  /* 首頁主視覺：多套墨景，進首頁隨機抽一套；點資訊區的紅印「香」換下一套。新增一套就在 MJ 加一行 */
+  window.KV = (function(){
+    const V = '20261119b', D = '/assets/mojing/';
     const MJ = [
       { f: 'mojing-01-baibai-embed.html', q: '&walk=1', title: '墨竹香塔', p: 'cover-3x4.webp', w: 'cover-16x10.webp' },
       { f: 'mojing-02-baibai-embed.html', q: '', title: '金山夫妻岩', p: 'mojing-02-cover-3x4.webp', w: 'mojing-02-cover-16x10.webp' }
     ];
-    const k = MJ[Math.random() * MJ.length | 0], P = k.p ? k : MJ[0];
-    const pw = document.getElementById('poster-w'), pp = document.getElementById('poster-p');
-    if (k.p) { pw.srcset = D + k.w; pp.src = D + k.p; } else document.getElementById('poster').hidden = true;
-    const mj = document.getElementById('mojing');
-    mj.title = k.title + '動畫';
-    mj.src = D + k.f + '?embed=1' + k.q + '&v=' + V;
-    mj.dataset.fallbackP = D + P.p; mj.dataset.fallbackW = D + P.w;
+    const po = document.getElementById('poster'), pw = document.getElementById('poster-w'), pp = document.getElementById('poster-p');
+    let i = Math.random() * MJ.length | 0, gpuOk = true;
+    function show(n){
+      i = (n + MJ.length) % MJ.length; const k = MJ[i];
+      pw.srcset = D + k.w; pp.src = D + k.p; po.hidden = false;
+      const mj = document.getElementById('mojing'); if (!mj) return k;
+      mj.style.transition = 'none'; mj.classList.remove('on'); void mj.offsetWidth; mj.style.transition = '';   /* 先立刻藏起舊畫面，避免閃白 */
+      mj.title = k.title + '動畫';
+      if (gpuOk) mj.src = D + k.f + '?embed=1' + k.q + '&v=' + V;
+      return k;
+    }
+    show(i);
+    return { MJ, show, next(){ return show(i + 1); }, off(){ gpuOk = false; } };
   })();
   </script>
   <div class="todayv" id="today"></div>
@@ -111,7 +119,7 @@
     <a href="/hunsang/">婚喪喜慶</a>
     <a href="/miaoyu/">廟宇祭祀</a>
   </nav>
-  <div class="shopline"><span class="seal">香</span><span><b>謝鈺豐香店</b>　店舖自製手工香塔・淨香末　歡迎到店品香</span></div>
+  <div class="shopline"><button type="button" class="seal" id="kvnext" aria-label="換一幅主視覺" title="換一幅主視覺">香</button><span><b>謝鈺豐香店</b>　店舖自製手工香塔・淨香末　歡迎到店品香</span></div>
   <p class="lead">祭祀，是思念的延續。金紙不在多，心意最重要。</p>
 </main>
 
@@ -123,14 +131,11 @@
 /* 靜態水墨佔位圖：之後換成動態主視覺（WebGPU），不支援的裝置仍顯示這張 */
 (function(){
   const mj = document.getElementById('mojing');
+  document.getElementById('kvnext').addEventListener('click', () => KV.next());
   addEventListener('message', e => {
     if (e.source !== mj.contentWindow || !e.data) return;
     if (e.data.mojing === 'ready') mj.classList.add('on');
-    if (e.data.mojing === 'unsupported') {   /* 跑不動動畫：至少留一張備用圖 */
-      const po = document.getElementById('poster');
-      if (po.hidden) { document.getElementById('poster-w').srcset = mj.dataset.fallbackW; document.getElementById('poster-p').src = mj.dataset.fallbackP; po.hidden = false; }
-      mj.remove();
-    }
+    if (e.data.mojing === 'unsupported') { KV.off(); mj.remove(); }   /* 跑不動動畫：留備用圖，點「香」仍可換圖 */
   });
 })();
 

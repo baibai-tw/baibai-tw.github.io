@@ -78,8 +78,25 @@
 </head>
 <body>
 <div class="stage">
-  <picture id="poster" aria-hidden="true"><source media="(orientation:landscape) and (min-width:700px)" srcset="/assets/mojing/cover-16x10.webp"><img src="/assets/mojing/cover-3x4.webp" alt=""></picture>
-  <iframe id="mojing" src="/assets/mojing/embed.html?embed=1&walk=1&v=2" title="墨竹香塔動畫" allow="autoplay" tabindex="-1" aria-hidden="true"></iframe>
+  <picture id="poster" aria-hidden="true"><source id="poster-w" media="(orientation:landscape) and (min-width:700px)"><img id="poster-p" alt=""></picture>
+  <iframe id="mojing" title="墨景" tabindex="-1" aria-hidden="true"></iframe>
+  <script>
+  /* 首頁主視覺：兩套墨景隨機播放。新增一套就在 MJ 加一行；沒有備用圖的填 null */
+  (function(){
+    const V = '20261119a', D = '/assets/mojing/';
+    const MJ = [
+      { f: 'mojing-01-baibai-embed.html', q: '&walk=1', title: '墨竹香塔', p: 'cover-3x4.webp', w: 'cover-16x10.webp' },
+      { f: 'mojing-02-baibai-embed.html', q: '', title: '金山夫妻岩', p: null, w: null }
+    ];
+    const k = MJ[Math.random() * MJ.length | 0], P = k.p ? k : MJ[0];
+    const pw = document.getElementById('poster-w'), pp = document.getElementById('poster-p');
+    if (k.p) { pw.srcset = D + k.w; pp.src = D + k.p; } else document.getElementById('poster').hidden = true;
+    const mj = document.getElementById('mojing');
+    mj.title = k.title + '動畫';
+    mj.src = D + k.f + '?embed=1' + k.q + '&v=' + V;
+    mj.dataset.fallbackP = D + P.p; mj.dataset.fallbackW = D + P.w;
+  })();
+  </script>
   <div class="todayv" id="today"></div>
   <h1 class="sr">拜拜｜金紙與祭祀參考｜謝鈺豐香店</h1>
 </div>
@@ -109,7 +126,11 @@
   addEventListener('message', e => {
     if (e.source !== mj.contentWindow || !e.data) return;
     if (e.data.mojing === 'ready') mj.classList.add('on');
-    if (e.data.mojing === 'unsupported') mj.remove();
+    if (e.data.mojing === 'unsupported') {   /* 跑不動動畫：至少留一張備用圖 */
+      const po = document.getElementById('poster');
+      if (po.hidden) { document.getElementById('poster-w').srcset = mj.dataset.fallbackW; document.getElementById('poster-p').src = mj.dataset.fallbackP; po.hidden = false; }
+      mj.remove();
+    }
   });
 })();
 

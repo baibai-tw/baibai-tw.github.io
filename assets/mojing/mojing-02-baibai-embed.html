@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>墨景 02｜金山夫妻岩</title>
+<!-- MOJING 02 v1.13 · no audio (user decision); embed: wider portrait view, paper fade at the bottom; 極簡 default; soft spray halo (shared MOJING 01 ink module, adapted to the seascape) · shared core follows MOJING 01 (mojing-01-baibai-embed.html) -->
+<style>
+*{margin:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:#ede6d6;color:#1b1a19;font-family:Songti TC,"Noto Serif TC",PMingLiU,serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity 2.4s}
+canvas.in{opacity:1}
+.emb,.emb body{background:#f3eee3}.emb body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:12%;background:linear-gradient(#f3eee300,#f3eee3);pointer-events:none;z-index:2}.emb #ov,.emb #ui,.emb #hud{display:none}.emb #rc{color:transparent;background:#f3eee3}
+#rc{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;letter-spacing:.4em;background:#ede6d6;opacity:0;pointer-events:none;transition:opacity .4s;z-index:6}
+#rc.on{opacity:1}
+#ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;gap:9vmin;background:radial-gradient(ellipse at 50% 42%,#f3eee2,#e3dac6);transition:opacity 1.6s;z-index:5}
+#ov.off{opacity:0;pointer-events:none}
+.tt{writing-mode:vertical-rl;font-size:9vmin;letter-spacing:.35em;font-weight:400}
+.sub{writing-mode:vertical-rl;font-size:2.4vmin;letter-spacing:.5em;opacity:.55}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+#go{writing-mode:vertical-rl;font-size:4vmin;letter-spacing:.4em;padding:1.2em .5em;border-left:2px solid #1b1a19;border-right:1px solid rgba(27,26,25,.35)}
+#go:hover{background:#1b1a190f}
+.seal{display:inline-block;background:#b23a2a;color:#ede6d6;font-size:2.2vmin;padding:.25em;line-height:1.1;writing-mode:vertical-rl;border-radius:2px}
+#ui{position:fixed;left:2vmin;bottom:2vmin;right:2vmin;display:flex;flex-wrap:wrap;gap:.6em;align-items:center;font-size:14px;z-index:3}
+#ui button{padding:.35em .6em;color:#1b1a19;border:1px solid #1b1a19;background:#ede6d6eb}
+#ui button.on{background:#1b1a19;color:#ede6d6}
+#hud{position:fixed;right:2vmin;top:2vmin;font:12px/1.5 ui-monospace,monospace;white-space:pre;color:#1b1a19;background:#ede6d6e6;padding:.5em .7em;z-index:3}
+.fb{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4em;text-align:center;padding:2em;background:radial-gradient(ellipse at 50% 40%,#f3eee2,#e3dac6)}
+.enso{width:38vmin;height:38vmin;border-radius:50%;background:conic-gradient(from 210deg,#0000 0 6%,#1b1a1926 9%,#1b1a19e0 22%,#1b1a19c0 55%,#1b1a1980 80%,#1b1a1912 93%,#0000 96%);-webkit-mask:radial-gradient(closest-side,#0000 80%,#000 82%,#000 93%,#0000 96%);mask:radial-gradient(closest-side,#0000 80%,#000 82%,#000 93%,#0000 96%);filter:blur(.6px)}
+.fb h1{font-weight:400;font-size:clamp(20px,4vmin,34px);letter-spacing:.3em}
+.fb p{opacity:.65;font-size:15px;line-height:2}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ov"><div class="sub">墨景　第二回</div><div class="tt">金山夫妻岩</div><button id="go">入境</button><span class="seal">墨景</span></div>
+<div id="rc">墨　重　研　中</div>
+<div id="ui"></div>
+<div id="hud"></div>
+<script>
+"use strict";
+const $ = s => document.querySelector(s), Q = new URLSearchParams(location.search);
+const SEED = (+Q.get("seed") || 1) >>> 0, SHOTS = Q.has("shots"), OFF = Q.has("offscreen");
+const EMB = { on: Q.get("embed") != "0",          // 拜拜 build: embed on by default (?embed=0 shows the full UI)
+ui: Q.get("ui") != "0",
+safe: ["left", "right", "top"].includes(Q.get("safe")) ? Q.get("safe") : null };
+if (EMB.on) document.documentElement.className = "emb";
+let FT = Q.has("freeze") ? +Q.get("freeze") : SHOTS ? 8 : null;          // frozen sim time for screenshots
+const MOB = matchMedia("(pointer:coarse)").matches;
+const STILL = matchMedia("(prefers-reduced-motion: reduce)").matches && !Q.has("freeze");
+const TGT = MOB ? 30 : 60, DEG = Math.PI / 180;
+const LAT = 25.23, VAZ = +(Q.get("vaz") || 60);     // view azimuth toward the stacks (deg from N) - TBD from map
+const tq = /^(\d{1,2}):(\d{2})$/.exec(Q.get("t") || ""), mq = Q.get("moon"), tdq = Q.get("tide");
+const dq = /^\d{4}-\d\d-\d\d$/.test(Q.get("date") || "") ? Q.get("date") : SHOTS ? "2026-11-15" : null;
+function rng(a) { return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const sst = (a, b, x) => (x = Math.max(0, Math.min(1, (x - a) / (b - a))), x * x * (3 - 2 * x));
+const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+const NT = new Float32Array(256).map(rng(SEED));
+const n1 = x => { const i = Math.floor(x), f = x - i, s = f * f * (3 - 2 * f); return NT[i & 255] * (1 - s) + NT[(i + 1) & 255] * s; };
+const SYN = 29.530588853, LUNAR_DAY = 24.84, LAG = +(Q.get("lag") || 0);   // lunitidal lag (h) - TBD for Jinshan
+const CLK = {
+h: 0, illum: 0, age: 0, doy: 0, month: 0, tide: 0, spring: 0, season: "", fire: false,
+fixT: tq ? (+tq[1] % 24) + Math.min(59, +tq[2]) / 60 : null,
+fixM: mq != null && mq !== "" && isFinite(mq) ? Math.min(1, Math.max(0, +mq)) : null,
+fixTide: tdq != null && tdq !== "" && isFinite(tdq) ? Math.min(1, Math.max(0, +tdq)) : null,
+upd() {
+const now = new Date(), d = dq ? new Date(dq + "T12:00") : now;
+this.h = this.fixT ?? now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+this.doy = (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 0)) / 864e5;
+this.month = d.getMonth() + 1;
+if (this.fixM != null) { this.illum = this.fixM; this.age = Math.acos(1 - 2 * this.fixM) / (2 * Math.PI); }
+else { this.age = (((d - 947182440000) / 864e5 / SYN) % 1 + 1) % 1; this.illum = (1 - Math.cos(2 * Math.PI * this.age)) / 2; }
+const transit = (12 + this.age * LUNAR_DAY) % 24;
+this.spring = .55 + .45 * Math.cos(4 * Math.PI * this.age);
+const ph = 2 * Math.PI * (this.h - transit - LAG) / (LUNAR_DAY / 2);
+this.tide = this.fixTide ?? .5 + .5 * this.spring * Math.cos(ph);
+const m = this.month;
+this.season = m >= 10 && m <= 12 ? "plume" : m >= 5 && m <= 9 ? "summer" : m >= 2 && m <= 4 ? "spring" : "dry";
+const ds = (d.getFullYear() * 400 + d.getMonth() * 32 + d.getDate()) >>> 0;
+this.fire = (typeof TEST != "undefined" && TEST.fire) || (m >= 5 && m <= 9 && rng(ds)() < .6);      // ~60% of nights in season
+}
+};
+const LT = {};
+function dirFrom(hourAngleH) {
+const dec = 23.44 * Math.sin(2 * Math.PI * (284 + CLK.doy) / 365) * DEG, lat = LAT * DEG, g = hourAngleH * 15 * DEG;
+const se = Math.sin(lat) * Math.sin(dec) + Math.cos(lat) * Math.cos(dec) * Math.cos(g), E = Math.asin(se);
+let B = Math.acos(Math.max(-1, Math.min(1, (Math.sin(dec) - se * Math.sin(lat)) / (Math.cos(E) * Math.cos(lat) + 1e-6))));
+if (Math.sin(g) > 0) B = 2 * Math.PI - B;                       // azimuth from north, clockwise
+const a = B - VAZ * DEG;                                         // relative to the view direction
+return { v: [Math.sin(a) * Math.cos(E), se, Math.cos(a) * Math.cos(E)], el: E / DEG, az: B / DEG };
+}
+function light() {
+const s = dirFrom(CLK.h - 12), mo = dirFrom(CLK.h - 12 - CLK.age * 24);
+const sun = sst(-3, 6, s.el), moon = CLK.illum * sst(-2, 8, mo.el) * (1 - sst(-6, 0, s.el));
+Object.assign(LT, { sd: s.v, md: mo.v, el: s.el, mel: mo.el, saz: s.az, sun, moon, night: 1 - sst(-8, 2, s.el),
+dawn: CLK.h < 12 ? sst(-6, 2, s.el) * (1 - sst(6, 22, s.el)) : 0 });
+}
+function cPlan(d, fovT, asp) {
+const a = Math.atan2(d[0], d[2]), el = Math.asin(d[1]) / DEG, ad = Math.abs(a) / DEG;
+if (ad > 90 || el > 40 || el < -1) return d;
+const edge = Math.atan(fovT * asp) / DEG + .38, ad2 = Math.min(ad, edge), e2 = Math.max(3, Math.min(el, 24)) * DEG;
+const a2 = Math.sign(a) * ad2 * DEG;
+return [Math.sin(a2) * Math.cos(e2), Math.sin(e2), Math.cos(a2) * Math.cos(e2)];
+}
+function moonShow(d, fovT, asp) {
+const a = Math.atan2(d[0], d[2]), el = Math.asin(Math.max(-1, Math.min(1, d[1]))) / DEG;
+const edge = Math.atan(fovT * asp) / DEG + .38, ad = Math.min(Math.abs(a) / DEG, edge), e2 = Math.max(3, Math.min(el, 24)) * DEG;
+const a2 = (a < 0 ? -1 : 1) * ad * DEG;
+return [Math.sin(a2) * Math.cos(e2), Math.sin(e2), Math.cos(a2) * Math.cos(e2)];
+}
+const LV = [0, .3, .6, 1], LN = ["平靜", "湧浪", "碎浪", "大浪"], RW = rng(SEED + 9), WT = [[40, 150], [30, 100], [15, 40], [4, 10]];
+const F = { lv: Math.min(3, +(Q.get("wind") ?? 1)), v: 0, spd: 0, g: 0, auto: !Q.has("wind"), nt: 0,
+upd(dt, t) {
+if (this.auto && FT == null && t >= this.nt) {            // natural rise and fall
+const night = CLK.h < 6 || CLK.h >= 20, o = this.lv, r = RW();
+this.lv = o == 0 ? 1 : o == 1 ? (r < .5 ? 0 : 2) : o == 2 ? (r < .6 || night ? 1 : 3) : 2;
+const w = WT[this.lv]; this.nt = t + w[0] + RW() * (w[1] - w[0]);
+}
+const target = LV[this.lv];
+this.v = FT != null ? target : this.v + (target - this.v) * (1 - Math.exp(-dt / 2.2));
+const gust = n1(t * .45) * .7 + n1(t * 1.9 + 40) * .3;
+this.g = this.v * this.v * gust; this.spd = this.v * (.75 + .5 * gust * this.v);
+} };
+F.v = LV[F.lv];
+const EYE = 1.2, FOVT = .4167, SHIFT = -.1;          // tan(half vfov); lens shift puts the horizon at 55% height
+const PANW = .55, CAMS = [-PANW, 0, PANW];
+let camI = Q.has("cam") ? +Q.get("cam") : EMB.on ? 1 : -1;
+function camAt(t) {
+const x = camI >= 0 ? CAMS[Math.min(2, camI)] : PANW * Math.sin(t * .035);
+const sway = .004 * F.spd * (n1(t * .4 + 7) - .5);
+return { p: [x, EYE + sway, 0], f: [0, 0, 1], r: [1, 0, 0], u: [0, 1, 0] };
+}
+const A = { c: null, on: 0,
+start() {},          // no audio in MOJING 02 (user decision 2026-11-19)
+upd(f, cam) { const c = this.c; if (!c) return; const L = c.listener; if (L.positionX) { L.positionX.value = cam.p[0]; L.positionY.value = cam.p[1]; L.positionZ.value = cam.p[2]; } } };
+const PF = [];
+function stats(sec = 30) {
+const now = performance.now(), d = PF.filter(p => now - p[0] <= sec * 1e3).map(p => p[1]);
+if (!d.length) return { fps: 0, worst1: 0, n: 0 };
+const sum = d.reduce((a, b) => a + b, 0), w = [...d].sort((a, b) => b - a)[Math.floor(d.length * .01)];
+return { fps: +(d.length * 1e3 / sum).toFixed(1), worst1: +w.toFixed(2), n: d.length };
+}
+function fb(msg) {
+if (EMB.on) { document.body.innerHTML = ""; post("unsupported"); return; }
+document.body.innerHTML = `<div class="fb"><div class="enso"></div><h1>此處墨未研開</h1><p>這件作品需要 WebGPU。<br>請改用最新版 Chrome、Edge，或 Safari 26 以上開啟。<br><small>${msg || ""}</small></p><span class="seal">墨景</span></div>`;
+}
+const HUS=[80,397,66,388,52,378,46,362,50,346,64,336,80,326,88,312,84,298,70,290,52,284,40,272,36,256,36,238,56,232,60,212,78,210,88,192,110,186,118,170,140,166,152,152,165,148,172,128,180,124,176,100,180,96,176,52,200,47,300,52,364,58,362,95,366,100,362,128,374,134,376,160,384,166,386,195,380,200,392,215,390,240,398,246,404,272,412,280,416,300,404,312,396,326,404,338,422,346,436,358,440,374,434,386,450,380,470,378,480,372,490,368,492,397];
+const WIF=[490,397,488,360,484,345,498,330,494,312,488,300,530,292,528,290,525,255,535,250,540,228,548,222,552,198,560,194,566,165,572,160,568,135,574,130,570,105,576,100,572,78,610,76,648,80,652,108,646,112,650,140,658,146,660,180,668,186,672,210,684,220,688,250,692,258,690,290,698,300,684,318,688,336,690,397];
+const CHI=[700,397,702,330,698,312,712,300,722,296,726,286,744,288,752,298,780,305,805,318,822,336,838,352,850,375,858,397];
+const LEDGES=[95,128,160,195,215,240,272,300,330,345], NOTCH=[[314,16,40,150],[322,10,150,420],[322,12,480,700],[372,10,480,700],[352,12,700,860]];
+const SZ = 520, SU = 60 / 350;                        // stacks ~520 m out, ~60 m tall -> metres per crop px
+const SX = -41.6 - (451 - 44) * SU;                   // world x of crop x=44 (group centred at x=-41.6 m)
+function stackTex() {                                  // R mask, G blurred mask (rounding), B ledge/notch darkness
+const W = 1024, H = 448, k = W / 830, c = document.createElement("canvas"); c.width = W; c.height = H;
+const g = c.getContext("2d"), P = (x, y) => [(x - 36) * k, (y - 40) * k];
+const path = new Path2D(); for (const a of [HUS, WIF, CHI]) { for (let i = 0; i < a.length; i += 2) { const p = P(a[i], a[i + 1]); i ? path.lineTo(...p) : path.moveTo(...p); } path.closePath(); }
+g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+g.filter = "blur(10px)"; g.fillStyle = "#0f0"; g.fill(path); g.filter = "none";
+g.globalCompositeOperation = "lighter"; g.fillStyle = "#f00"; g.fill(path);
+g.save(); g.clip(path); const R = rng(SEED + 5);
+for (const y of LEDGES) { const yy = P(0, y)[1]; for (let x = 0; x < W; x += 6 + R() * 18) { if (R() < .3) continue; const L = 10 + R() * 40;
+const gr = g.createLinearGradient(0, yy, 0, yy + 9); gr.addColorStop(0, "#0000ff"); gr.addColorStop(1, "#00000000"); g.fillStyle = gr; g.fillRect(x, yy, L, 9); } }
+for (const [y, hh, xa, xb] of NOTCH) { const a = P(xa, y), b = P(xb, y), h = hh * k;
+const gr = g.createLinearGradient(0, a[1] - h, 0, a[1] + h); gr.addColorStop(0, "#00000000"); gr.addColorStop(.5, "#0000ff"); gr.addColorStop(1, "#00000000");
+g.fillStyle = gr; g.fillRect(a[0], a[1] - h, b[0] - a[0], 2 * h); }
+g.restore();
+const x0 = SX + (36 - 44) * SU, x1 = SX + (866 - 44) * SU, yT = (397 - 40) * SU, yB = (397 - 488) * SU;
+return { c, quad: [x0, yB, x1, yT] };
+}
+const BL = [];
+function mkBlock(R, cx, cz, ux, uz, ln, wd, base, dip, target) {
+const vx = -uz, vz = ux, ch = [...Array(8)].map(() => .08 + R() * .27);
+const loc = [[-1, -1 + ch[0]], [-1 + ch[1], -1], [1 - ch[2], -1], [1, -1 + ch[3]], [1, 1 - ch[4]], [1 - ch[5], 1], [-1 + ch[6], 1], [-1, 1 - ch[7]]];
+const cs = loc.map(([a, b]) => [cx + ux * a * ln / 2 + vx * b * wd / 2 + (R() - .5) * .2, cz + uz * a * ln / 2 + vz * b * wd / 2 + (R() - .5) * .2]);
+const half = Math.max(...cs.map(p => Math.abs(p[0] - cx))) || .3;
+let hs = cs.map(([X]) => Math.max(.03, base + dip * (cx - X) / half + (R() - .5) * .05));   // left high, right low
+const mx = Math.max(...hs); if (target) hs = hs.map(h => h * target / mx);
+BL.push({ cx, cz, cs, hs, maxh: Math.max(...hs) });
+}
+function buildReef() {
+BL.length = 0; const R = rng(SEED * 31 + 7);
+const arms = [[-.75, 1, 9, 6], [.38, 1, 8, 10.5]], vx = -.2, vz = 2.4;
+arms.forEach(([dx, dz, n, L], arm) => { const nr = Math.hypot(dx, dz), ux = dx / nr, uz = dz / nr; let t = 0;
+for (let i = 0; i < n; i++) {
+const ln = (.45 + R() * .45) * (1 + 3 * t / 31), wd = (.45 + R() * .4) * (1 + t / 31 * 2.4);
+const base = i == 0 ? .14 : .05 + R() * .07 + R() * .3 * Math.min(1, t / 8), dip = (.06 + R() * .14) * (.5 + .5 * Math.min(1, t / 8));
+let target = 0; if (arm == 1 && i == 5) target = .6; else if (arm == 1 && i > 5) target = Math.min(.48, base + dip);
+mkBlock(R, vx + ux * (t + ln / 2) + (R() - .5) * .6, vz + uz * (t + ln / 2), ux, uz, ln, wd, base, dip, target);
+t += ln + (R() < .7 ? .1 + R() * .25 : .8 + R() * 1.2);
+} });
+for (const [x, z] of [[1.25, 3.3], [1.85, 3.75], [1.55, 4.5], [2.35, 4.3], [1.05, 5.1], [2, 5.4], [-.7, 4.6], [-1.2, 5], [-.5, 5.6], [-1.6, 5.8], [-.9, 6.3], [-.3, 6.8], [-1.4, 6.9], [-.7, 7.4]]) {
+const a = .2 + R() * .7; mkBlock(R, x + (R() - .5) * .2, z, Math.sin(a), Math.cos(a), .4 + R() * .35, .35 + R() * .25, .05 + R() * .08, .03 + R() * .06, 0); }
+for (const [x, z, ln, wd, mh, a] of [[-2.3, 4.6, .9, .72, .88, .35], [-1.7, 5.2, .55, .45, .4, .8], [-3, 5.6, .45, .38, .26, .1], [-1.9, 4, 1, .8, .62, .3], [-2.9, 4.15, 1.2, .9, .7, .5],
+[-3.9, 4.5, 1.4, 1, .78, .4], [-4.6, 5.1, 1.5, 1.1, .66, .6], [-3.4, 4.95, .9, .7, .58, .2], [-1.3, 3.45, .9, .8, .5, .4], [-2.4, 3.5, 1.1, .9, .56, .2], [-3.5, 3.7, 1.3, 1, .62, .5], [-1.75, 3, 1, .9, .48, .3], [-2.9, 3.1, 1.2, 1, .52, .6]])
+mkBlock(R, x, z, Math.sin(a), Math.cos(a), ln, wd, mh * .7, mh * .25, mh);
+}
+const WLA = -.05, WLB = .55;                           // water level (m) = WLA + tide*WLB (exaggerated)
+function buildMesh() {
+const v = [], tri = (a, b, c, n, m) => { for (const p of [a, b, c]) v.push(p[0], p[1], p[2], n[0], n[1], n[2], m, 0); };
+const nrmOf = (a, b, c) => { const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+const n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]], l = Math.hypot(...n) || 1; return n.map(q => q / l); };
+const prism = (cs, hs, m, bottom) => {
+const top = cs.map((p, i) => [p[0], hs[i], p[1]]), cen = [0, 1, 2].map(k => top.reduce((s, q) => s + q[k], 0) / top.length);
+for (let i = 0; i < top.length; i++) { const a = top[i], b = top[(i + 1) % top.length]; let n = nrmOf(cen, b, a); if (n[1] < 0) n = n.map(q => -q); tri(cen, b, a, n, m ? 2 : 0);
+const a2 = [a[0], bottom, a[2]], b2 = [b[0], bottom, b[2]], sn = nrmOf(a, b, b2); tri(a, b, b2, sn, m ? 2 : 1); tri(a, b2, a2, sn, m ? 2 : 1); } };
+for (const b of BL) prism(b.cs, b.hs, 0, -.4);
+prism([[-3.4, 1.6], [3.4, 1.6], [.55, 3.95], [-1.05, 3.95]], [.32, .32, .3, .3], 1, -.4);
+const nR = v.length / 8;
+const W = 4000; tri([-W, -.45, 1], [W, -.45, 1], [W, -.45, W], [0, 1, 0], 4); tri([-W, -.45, 1], [W, -.45, W], [-W, -.45, W], [0, 1, 0], 4);
+const nB = v.length / 8;
+tri([-W, 0, 1], [W, 0, 1], [W, 0, W], [0, 1, 0], 3); tri([-W, 0, 1], [W, 0, W], [-W, 0, W], [0, 1, 0], 3);
+return { data: new Float32Array(v), nRock: nB, n: v.length / 8 };
+}
+const BANK = [[-3.4, 1.6], [3.4, 1.6], [.55, 3.95], [-1.05, 3.95]];
+function inPoly(x, z, P) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, zi] = P[i], [xj, zj] = P[j];
+if ((zi > z) != (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; }
+function groundAt(x, z) { if (inPoly(x, z, BANK)) return .31; let h = -1; for (const b of BL) if (inPoly(x, z, b.cs)) h = Math.max(h, b.maxh * .8); return h; }
+function buildGrass() {
+const R = rng(SEED * 21 + 3), g = [], add = (x, z, h, lean, w, tone) => { const y = .31; g.push(x, z, h, lean, w, tone, Math.round(y * 100) * 100 + R() * 6.28, R() < .34 ? 1 : 0); };   // ground height packed with the phase
+for (let i = 0; i < 70; i++) add(-2.2 + R() * 1.6, 2.05 + R() * .25, .45 + R() * .35, .1 + R() * .25, .010, .55);   // back layer: shorter, paler
+for (let i = 0; i < 95; i++) add(-2.0 + R() * 1.5, 1.6 + R() * .6, .75 + R() * .5, .15 + R() * .35, .014, .85);  // main clump
+for (let i = 0; i < 10; i++) add(-1.5 + R() * .7, 1.15 + R() * .3, 1.0 + R() * .35, .12 + R() * .2, .022, 1);    // near blades
+for (let i = 0; i < 60; i++) add(.7 + R() * 1.3, 1.5 + R() * .7, .65 + R() * .45, -(.12 + R() * .3), .014, .8);  // right clump
+return new Float32Array(g);
+}
+const TEST = { kite: Q.get("kite") == "1", ship: Q.get("ship") == "1", fire: Q.get("fire") == "1" };
+const PMAX = 2400, PS = { data: new Float32Array(PMAX * 8), n: 0, list: [] }, RD = rng(SEED + 77);
+const FB = { x: -150, z: 320 };                         // fire-fishing boat at the left side of the frame, never beside the stacks
+const DY = { flare: 0, shipX: -1e5, ship: { on: 0, t0: 0, next: 60 + RD() * 600 }, kite: [0, 0, 0], kiteOn: 0, kiteNext: 5, kiteT: 0, fireT: 0, lastCrest: [] };
+function crestZ(t, n) { const sp = t * (.35 + .25 * F.spd); return (Math.PI / 2 + 2 * Math.PI * n - sp * 6.2 - 1.25) / 1.25; }   // matches the water shader
+function emit(x, y, z, vx, vy, vz, size, life, col) { if (PS.list.length < PMAX) PS.list.push({ x, y, z, vx, vy, vz, size, life, age: 0, col }); }
+function dynUpd(dt, t) {
+const wl = WLA + CLK.tide * WLB, night = LT.night > .5;
+const sp = t * (.35 + .25 * F.spd), K = Math.PI * 2, n0 = Math.ceil((2 * 1.25 + sp * 6.2 + 1.25 - Math.PI / 2) / K), n1 = Math.floor((16 * 1.25 + sp * 6.2 + 1.25 - Math.PI / 2) / K);
+if (!DY.crest) DY.crest = new Map();
+for (const k of DY.crest.keys()) if (k < n0 - 1) DY.crest.delete(k);
+for (let n = n0; n <= n1; n++) { const z = crestZ(t, n), zp = DY.crest.get(n); DY.crest.set(n, z);
+if (zp === undefined || z >= zp) continue;
+for (const b of BL) if (b.maxh > wl + .04 && b.cz <= zp && b.cz > z && b.cz < 15) {
+if ((b.cool || 0) > t || RD() > .28 + .3 * F.v) continue;
+b.cool = t + 3 + RD() * 9;
+const r = RD(), big = (.25 + F.v * 1.1) * (.35 + 1.4 * r * r) * (RD() < .08 ? 1.8 : 1), sc = Math.min(1.6, 3.5 / b.cz + .4);   // mostly small, now and then a big one
+let near = b.cs[0]; for (const p of b.cs) if (p[1] < near[1]) near = p;
+const k = Math.round((10 + F.v * 60) * sc * big);
+for (let i = 0; i < k; i++) { const up = (1.4 + RD() * 3.4) * big;                                  // droplets: a fan thrown up off the face
+emit(near[0] + (RD() - .5) * .7, wl + .05, near[1] - .05, (RD() - .5) * 1.4, up, -.3 - RD() * .6, .015 + RD() * .04, .6 + RD() * .7, [.97, .97, .95]); }
+for (let i = 0; i < k * .25; i++)                                                                     // mist: slow, large, faint
+emit(near[0] + (RD() - .5) * .9, wl + .2 + RD() * .4 * big, near[1] - .1, (RD() - .5) * .5 + .3, .5 + RD() * .8, -.15, .09 + RD() * .12, 1.2 + RD() * 1.2, [.6, .6, .58]);
+if (b.maxh < wl + .18 + .3 * F.v * big)                                                              // spill: water sheets over the low slab and runs off its edges
+for (const p of b.cs) for (let i = 0; i < 3 + F.v * 5; i++)
+emit(p[0] + (RD() - .5) * .1, b.maxh + .02, p[1], (p[0] - b.cx) * .6 * RD(), .2 + RD() * .4, (p[1] - b.cz) * .6 * RD(), .02 + RD() * .02, .5 + RD() * .4, [.95, .95, .93]);
+for (let i = 0; i < 6 + F.v * 10; i++)                                                                // foam lace left on the water after the hit
+emit(near[0] + (RD() - .5) * 1.6, wl + .01, near[1] - .2 - RD() * .6, (RD() - .5) * .15, 0, -.05 - RD() * .1, .05 + RD() * .08, 2.5 + RD() * 3, [.9, .9, .88]); } }
+const fireOn = CLK.fire && night && F.lv < 2; FB.z = fireOn ? 320 : 0;
+if (fireOn) { DY.fireT = (DY.fireT + dt) % 14; const f = DY.fireT;
+DY.flare = f > 4 && f < 9 ? (f < 4.3 ? (f - 4) / .3 : Math.max(0, 1 - (f - 4.3) / 4.7)) ** .7 : 0;
+if (DY.flare > .4) for (let i = 0; i < 6; i++) emit(FB.x + (RD() - .5) * 26, .2, FB.z + (RD() - .5) * 10, (RD() - .5) * 2, 3 + RD() * 3, 0, .35, .6, [.92, .93, .95]); }
+else DY.flare = 0;
+const sh = DY.ship; if (!sh.on && (t > sh.next || TEST.ship)) { sh.on = 1; sh.t0 = t; }
+if (sh.on) { const u = (t - sh.t0) / 360; DY.shipX = -1100 + u * 2200; if (u > 1) { sh.on = 0; sh.next = t + 1200 + RD() * 1200; } }
+if (!sh.on || F.lv >= 3) DY.shipX = -1e5;
+const day = LT.el > 2;
+if (!DY.kiteOn && day && (t > DY.kiteNext || TEST.kite)) { DY.kiteOn = 1; DY.kiteT = 0; }
+if (DY.kiteOn) { DY.kiteT += dt; const w = .22 - F.v * .12, r = 14 - F.v * 9;
+DY.kite = F.lv >= 3 ? [24 + Math.sin(t * 1.7) * .6, 40 + Math.sin(t * 2.3) * .4, 120] : [19 + Math.cos(t * w) * r, 40 + Math.sin(t * w * 1.3) * 3, 120 + Math.sin(t * w) * r * .6];
+if ((DY.kiteT > 90 && !TEST.kite) || !day) { DY.kiteOn = 0; DY.kiteNext = t + 120 + RD() * 400; } }
+const L = PS.list; let j = 0;
+for (const p of L) { p.age += dt; if (p.age > p.life) continue; if (p.vy !== 0 || p.y > wl + .05) p.vy -= 9.8 * dt * (p.size > .08 ? .12 : p.size > .2 ? .7 : 1); if (p.y < wl + .005) { p.y = wl + .005; p.vy = 0; p.vx *= .9; p.vz *= .9; } p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+const a = (1 - p.age / p.life) * (night ? .6 : .9), o = j * 8;
+PS.data.set([p.x, p.y, p.z, p.size, p.col[0] * a, p.col[1] * a, p.col[2] * a, a], o); L[j++] = p; }
+L.length = j; PS.n = j;
+}
+const NAN = 2 + 22, AN = new Float32Array(NAN * 8);
+const CRAB = { edge: null, len: 0, c: [{ u: .35, size: .03, v: 0, goal: .5, wait: 1, claw: 0, leg: 0 }, { u: .55, size: .018, v: 0, goal: .4, wait: 2, claw: 0, leg: 0 }] };
+function crabSetup() {     // shore-facing edge of the nearest exposed rock near the centre
+let best = null; for (const b of BL) if (b.cz > 3 && b.cz < 5.5 && Math.abs(b.cx) < 1.3 && b.maxh > .22 && (!best || b.cz < best.cz)) best = b;
+if (!best) best = BL[0]; const cs = best.cs, n = cs.length; let i0 = 0; cs.forEach((p, i) => { if (p[1] < cs[i0][1]) i0 = i; });
+const pts = [cs[(i0 + n - 1) % n], cs[i0], cs[(i0 + 1) % n]];   // the two edges either side of the nearest corner
+const segs = [], L = []; let tot = 0; for (let i = 0; i < 2; i++) { const a = pts[i], b = pts[i + 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]); segs.push([a, b]); L.push(l); tot += l; }
+CRAB.edge = { segs, L, cx: best.cx, cz: best.cz }; CRAB.len = tot;
+}
+function crabAt(u) { const E = CRAB.edge; let d = u * CRAB.len; for (let i = 0; i < 2; i++) { if (d <= E.L[i] || i == 1) { const [a, b] = E.segs[i], t = Math.min(1, d / E.L[i]);
+const x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t, ox = x - E.cx, oz = z - E.cz, o = Math.hypot(ox, oz) || 1; return [x + ox / o * .03, z + oz / o * .03]; } d -= E.L[i]; } }
+const GPER = [[192, 48], [210, 49], [232, 50], [255, 51], [281, 52], [320, 54], [344, 56], [588, 77], [600, 77], [614, 77], [625, 78], [638, 79], [178, 124], [190, 125], [370, 133], [560, 163], [566, 162], [386, 196], [700, 300], [745, 288], [760, 290], [62, 236]].map(([x, y]) => [SX + (x - 44) * SU, (397 - y) * SU + .4, SZ - 2]);
+const GULL = GPER.map((p, i) => ({ fly: 0, t: 0, next: 5 + RD() * 60, ph: RD() * 6.28, r: 25 + RD() * 45, h: 30 + RD() * 50, cx: -41 + (RD() - .5) * 60, w: (.25 + RD() * .2) * (RD() < .5 ? -1 : 1) }));
+function lifeUpd(dt, t) {
+if (!CRAB.edge) crabSetup();
+const wl = WLA + CLK.tide * WLB, low = GPER, night = LT.night > .5;
+const [A, B] = CRAB.c, gap = Math.abs(A.u - B.u) * CRAB.len;
+for (const c of CRAB.c) { c.wait -= dt;
+if (c.wait <= 0) { c.goal = Math.min(.95, Math.max(.05, c.u + (RD() - .5) * .5)); c.wait = 2 + RD() * 6; }
+const dir = Math.sign(c.goal - c.u), sp = .05 * (c === A ? 1 : 1.3);
+if (Math.abs(c.goal - c.u) * CRAB.len > .01) { c.u += dir * sp * dt / CRAB.len; c.leg += dt * 14; } }
+A.claw += ((gap < .1 ? 1 : 0) - A.claw) * Math.min(1, dt * 4);
+if (gap < .07 && B.wait > 1) { B.goal = Math.min(.95, Math.max(.05, B.u + Math.sign(B.u - A.u || 1) * (.12 + RD() * .2))); B.wait = 1; }
+if (F.lv >= 3) for (const c of CRAB.c) if (RD() < dt * .3) c.u = Math.min(.95, Math.max(.05, c.u + (RD() - .5) * .08));   // pushed by heavy surf
+CRAB.c.forEach((c, i) => { const [x, z] = crabAt(c.u); AN.set([x, .06 + c.size * .5, z, c.size, 0, c.claw, c.leg, 1], i * 8); });
+const kiteNear = DY.kiteOn ? 1 : 0;
+GULL.forEach((g, i) => { g.t += dt; const p = low[i];
+if (!g.fly && !night && g.t > g.next) { g.fly = 1; g.t = 0; g.dur = 15 + RD() * 40; }
+if (!g.fly && !night && (RD() < dt * (.004 + F.v * .03 + kiteNear * .04 + (F.lv >= 2 && p[1] < 12 ? .05 : 0)))) { g.fly = 1; g.t = 0; g.dur = 10 + RD() * 25; }
+if (g.fly && (g.t > g.dur || night)) { g.fly = 0; g.t = 0; g.next = 20 + RD() * 120; }
+if (g.fly) { const a = g.ph + g.t * g.w * (1 + F.v * .6), wob = F.v * 6 * Math.sin(g.t * 1.7 + i);
+const k = Math.min(1, g.t / 1.5, (g.dur - g.t) / 1.5);                   // fade in / out: never drawn crossing the rock
+const fx = g.cx + Math.cos(a) * (g.r + 70), fy = 72 + g.h * .6 + Math.sin(g.t * .9 + i) * 4 + wob * .3, fz = SZ - 40 + Math.sin(a) * g.r * .5;
+AN.set([fx, fy, fz, 1.2 * 2.4, 2, Math.sin(g.t * 9 + i) * (1 - F.v * .4), 0, k], (2 + i) * 8); }
+else AN.set([p[0], p[1], p[2], .9, 1, 0, 0, Math.min(1, g.t / 1.5)], (2 + i) * 8); });   // perch fleck fades back in after landing
+}
+const WS = `
+struct U{cp:vec4f,cf:vec4f,cr:vec4f,cu:vec4f,res:vec4f,sd:vec4f,md:vec4f,fo:vec4f,ck:vec4f,lt:vec4f,sq:vec4f,sn:vec4f,dv:vec4f,mv:vec4f,ex:vec4f,kt:vec4f,ik:vec4f};
+@group(0)@binding(0) var<uniform> u:U;
+@group(0)@binding(1) var<storage,read> gr:array<vec4f>;
+@group(0)@binding(2) var stx:texture_2d<f32>;
+@group(0)@binding(3) var smp:sampler;
+fn proj(P:vec3f)->vec4f{let v=P-u.cp.xyz;let x=dot(v,u.cr.xyz);let y=dot(v,u.cu.xyz);let z=dot(v,u.cf.xyz);
+let asp=u.res.x/u.res.y;let n=.05;let f=4000.;return vec4f(x/(u.res.z*asp),y/u.res.z+u.res.w*z,(z-n)*f/(f-n),z);}
+fn h2(p:vec2f)->f32{return fract(sin(dot(p,vec2f(127.1,311.7)))*43758.5453);}
+fn vn(p:vec2f)->f32{let i=floor(p);let f=fract(p);let s=f*f*(3.-2.*f);return mix(mix(h2(i),h2(i+vec2f(1,0)),s.x),mix(h2(i+vec2f(0,1)),h2(i+vec2f(1,1)),s.x),s.y);}
+fn waveA()->f32{return .04+.22*u.fo.x;}
+fn waveH(q:vec2f)->f32{let T=u.cp.w;var h=0.;
+var dirs=array<vec3f,3>(vec3f(.15,-1.,.55),vec3f(-.35,-.94,.9),vec3f(.4,-.92,1.7));
+for(var i=0;i<3;i++){let d=normalize(dirs[i].xy);let k=dirs[i].z;h+=sin(dot(d,q)*k+T*sqrt(9.8*k)*(.6+.5*u.fo.y))/(1.+f32(i));}
+let sp=T*(.35+.25*u.fo.y);let wob=vn(vec2f(q.x*.35,T*.2))*2.5;
+let surge=pow(max(sin(q.y*1.25+sp*6.2+wob),0.),4.)*smoothstep(15.,4.,q.y)*(.05+.25*u.fo.x);   // surf lines lift the water as they pass
+return u.lt.w+waveA()*h*.55+surge;}
+fn skyc(d:vec3f)->vec3f{let day=1.-u.lt.z;let hz=vec3f(.86,.84,.80);let zen=vec3f(.55,.64,.76);
+let nt=vec3f(.20,.23,.30)*(.55+.45*u.ck.y);              // moonlit night sky stays readable
+var c=mix(mix(hz,zen,clamp(d.y*2.5,0.,1.))*nt/vec3f(.7,.74,.78),mix(hz,zen,clamp(d.y*2.5,0.,1.)),day);
+let sdr=normalize(u.sd.xyz);c+=vec3f(1.,.55,.3)*pow(max(dot(d,sdr),0.),24.)*.5*u.sd.w*(1.-clamp(sdr.y*3.,0.,1.));return c;}
+fn lit(n:vec3f,alb:vec3f)->vec3f{let s=normalize(u.sd.xyz);let m=normalize(u.md.xyz);let day=1.-u.lt.z;
+let sun=max(dot(n,s),0.)*u.lt.x*vec3f(1.,.9,.78)*1.1;let moon=max(dot(n,m),0.)*u.lt.y*vec3f(.55,.65,.9)*.7;
+let amb=mix(vec3f(.13,.145,.19)*(.6+.4*u.ck.y),vec3f(.38,.42,.48),day)*(.6+.4*n.y);return alb*(sun+moon+amb);}
+struct FO{@location(0) c:vec4f,@location(1) n:vec4f,@location(2) w:vec4f,@location(3) s:vec4f};
+fn fo(c:vec4f,n:vec4f,w:vec4f)->FO{var o:FO;o.c=c;o.n=n;o.w=w;o.s=vec4f(0);return o;}
+struct FS{@builtin(position) p:vec4f,@location(0) uv:vec2f};
+@vertex fn vSky(@builtin(vertex_index) i:u32)->FS{var q=array<vec2f,3>(vec2f(-1,-1),vec2f(3,-1),vec2f(-1,3));var o:FS;o.p=vec4f(q[i],1,1);o.uv=q[i];return o;}
+@fragment fn fSky(v:FS)->FO{let asp=u.res.x/u.res.y;
+let d=normalize(u.cf.xyz+u.cr.xyz*v.uv.x*u.res.z*asp+u.cu.xyz*(v.uv.y-u.res.w)*u.res.z);
+var c=skyc(d);
+if(u.sd.w>.01&&dot(d,normalize(u.dv.xyz))>.99985){c=mix(c,vec3f(.95,.42,.2),u.sd.w);}
+if(u.mv.w>.01&&dot(d,normalize(u.mv.xyz))>.99975){c=mix(c,vec3f(.9,.9,.86),u.mv.w);}
+return fo(vec4f(c,0),vec4f(0,0,0,999),vec4f(0));}
+struct SO{@builtin(position) p:vec4f,@location(0) t:vec2f,@location(1) w:vec3f};
+@vertex fn vSt(@builtin(vertex_index) i:u32)->SO{var c=array<vec2f,6>(vec2f(0,0),vec2f(1,0),vec2f(1,1),vec2f(0,0),vec2f(1,1),vec2f(0,1));
+let t=c[i];let P=vec3f(mix(u.sq.x,u.sq.z,t.x),mix(u.sq.y,u.sq.w,t.y),${SZ}.);var o:SO;o.p=proj(P);o.t=vec2f(t.x,1.-t.y);o.w=P;return o;}
+@fragment fn fSt(v:SO)->FO{let s=textureSample(stx,smp,v.t);
+let e=vec2f(1./1024.,1./448.);let gx=textureSample(stx,smp,v.t+vec2f(e.x*3.,0)).g-textureSample(stx,smp,v.t-vec2f(e.x*3.,0)).g;
+let gy=textureSample(stx,smp,v.t+vec2f(0,e.y*3.)).g-textureSample(stx,smp,v.t-vec2f(0,e.y*3.)).g;
+if(s.r<.5){discard;}
+let n=normalize(vec3f(-gx*3.,gy*3.,-1.)*vec3f(1,1,1)+vec3f(0,0,0));
+let band=vn(vec2f(v.w.x*.05,v.w.y*1.3))*.25+vn(vec2f(v.w.x*.3,v.w.y*4.))*.12+u.ik.x*smoothstep(.55,.8,vn(vec2f(v.w.x*.02,v.w.y*2.2)))*.3;   // ink: horizontal axe-cut strata
+var alb=mix(vec3f(.62,.55,.45),vec3f(.15,.135,.12),u.ik.x)*(1.-band)*(1.-mix(.45,.9,u.ik.x)*s.b);   // ink: stacks read deep, recesses near-black
+alb*=mix(.7,1.,smoothstep(0.,25.,v.w.y));             // darker, wetter lower half
+let T=u.cp.w;let sets=pow(.5+.5*sin(T*.55+v.w.x*.035),3.)*(.5+.5*sin(T*.21+1.3));   // surges come in sets along the base
+let fh=1.5+(3.+16.*u.fo.x)*(.25+.75*sets);
+let tongue=vn(vec2f(v.w.x*.35,T*.6))*fh*.6;                                       // broken tongues running up the face
+let fw=(1.-smoothstep(0.,fh+tongue,v.w.y))*smoothstep(.38,.62,vn(vec2f(v.w.x*.5,v.w.y*1.1-T*1.4))+.25*(1.-v.w.y/fh));
+let mist=(1.-smoothstep(0.,fh*1.6,v.w.y))*sets*u.fo.x*.35;
+alb=mix(alb,vec3f(.95,.95,.93),clamp(fw*(.55+.45*u.fo.x)+mist,0.,1.));
+let heave=(.6+2.6*u.fo.x)*(.5+.5*sin(T*.62+v.w.x*.045))*(.6+.4*sin(T*1.13+v.w.x*.11))+(.3+.9*u.fo.x)*vn(vec2f(v.w.x*.25,T*.8));
+if(v.w.y<heave){return fo(vec4f(skyc(vec3f(0,.02,1))*.85,1),vec4f(0,1,0,30.),vec4f(1.,.05,.6*u.fo.x,0.));}   // sea surface at the base
+var c=lit(n,alb);let fog=1.-exp(-${SZ}.*.0011);c=mix(c,skyc(vec3f(0,.02,1)),fog*.55);return fo(vec4f(c,1),vec4f(n,6.),vec4f(0));}   // stacks: pseudo distance keeps them mid ink
+struct MO{@builtin(position) p:vec4f,@location(0) n:vec3f,@location(1) w:vec3f,@location(2) @interpolate(flat) m:f32};
+@vertex fn vM(@location(0) a:vec4f,@location(1) b:vec4f)->MO{var P=a.xyz;let m=b.w;var o:MO;
+if(m>2.5&&m<3.5){P.y=u.lt.w-waveA()*1.1;}o.p=proj(P);o.n=b.xyz;o.w=P;o.m=m;return o;}
+@fragment fn fM(v:MO)->FO{let V=normalize(v.w-u.cp.xyz);let dist=length(v.w-u.cp.xyz);
+if(v.m>3.5){return fo(vec4f(lit(vec3f(0,1,0),vec3f(.16,.20,.20)),1),vec4f(0,1,0,dist),vec4f(0));}       // seabed under the translucent water
+if(v.m>2.5){                                          // water: swell + chop + surf crests, all read the force
+let T=u.cp.w;let A=.03+.16*u.fo.x;let q=v.w.xz;var dx=0.;var dz=0.;
+var dirs=array<vec3f,3>(vec3f(.15,-1.,.55),vec3f(-.35,-.94,.9),vec3f(.4,-.92,1.7));
+for(var i=0;i<3;i++){let d=normalize(dirs[i].xy);let k=dirs[i].z;let ph=dot(d,q)*k+T*sqrt(9.8*k)*(.6+.5*u.fo.y);
+let c=cos(ph)*A/(1.+f32(i));dx+=c*d.x*k;dz+=c*d.y*k;}
+let ch=(vn(q*3.+vec2f(T*.4,-T*.9))-.5)*(.15+.6*u.fo.x);
+let N=normalize(vec3f(-dx-ch,1.,-dz-ch));
+let fr=.02+.98*pow(1.-max(-V.y,0.),5.);let r=skyc(reflect(V,N));
+let body=lit(vec3f(0,1,0),vec3f(.10,.18,.22));var c=mix(body,r,fr);
+let rv=reflect(V,N);c+=vec3f(1.,.75,.5)*pow(max(dot(rv,normalize(u.dv.xyz)),0.),400.)*2.*u.sd.w;
+c+=vec3f(.8,.85,.95)*pow(max(dot(rv,normalize(u.mv.xyz)),0.),300.)*1.2*u.mv.w*u.ck.y;   // moon glint follows the displayed moon
+let gl=u.lt.x*u.sd.w;let ml=u.mv.w*u.ck.y;
+let lob=pow(max(dot(rv,normalize(u.dv.xyz)),0.),mix(90.,14.,u.fo.x))*gl+pow(max(dot(rv,normalize(u.mv.xyz)),0.),mix(70.,12.,u.fo.x))*ml;
+let cell=floor(q*vec2f(5.,16.)+vec2f(0.,T*(1.+u.fo.y)));let twk=fract(h2(cell)*7.+T*(1.5+u.fo.x*2.));
+c+=vec3f(1.,.97,.9)*step(1.-clamp(lob,0.,1.)*.75,h2(cell+floor(T*3.)))*smoothstep(.2,.8,twk)*1.6;
+let fd=v.w-vec3f(u.ex.x,0.,u.ex.y);let fr2=u.ex.z*exp(-dot(fd.xz,fd.xz)*.0004);
+var streak=0.;if(u.ex.z>.001){streak=u.ex.z*exp(-pow((v.w.x-u.ex.x-sin(v.w.z*.3+T*5.)*1.5)*(u.ex.y/v.w.z)*.5,2.))*smoothstep(u.ex.y,u.ex.y*.35,v.w.z);}
+c+=vec3f(.95,.45,.18)*(fr2*.8+streak*.7);
+let sp=T*(.35+.25*u.fo.y);let wob=vn(vec2f(q.x*.35,T*.2))*2.5;           // surf lines advance toward the shore
+let crest=pow(max(sin(q.y*1.25+sp*6.2+wob),0.),10.)*smoothstep(15.,4.,q.y)*smoothstep(2.5,3.6,q.y);
+var foam=crest*(.25+.75*u.fo.x)*smoothstep(.35,.6,vn(q*vec2f(.8,2.)+vec2f(0,T*.5)));
+let sxk=(v.w.x+41.6)/78.;let near=smoothstep(1.25,.75,abs(sxk))*smoothstep(430.,505.,q.y)*smoothstep(560.,520.,q.y);   // white water around the stacks
+let sfo=near*smoothstep(.45,.75,vn(vec2f(v.w.x*.15,q.y*.25)+vec2f(T*.2,-T*.35)))*(.35+.65*u.fo.x)*(.6+.4*sin(T*.55+v.w.x*.035));
+foam=max(foam,sfo);
+c=mix(c,lit(vec3f(0,1,0),vec3f(.92,.92,.9)),clamp(foam,0.,1.));
+let fog=1.-exp(-length(v.w-u.cp.xyz)*.0016);let al=mix(.72,.97,smoothstep(4.,30.,v.w.z))*(1.-.15*foam);
+let cl=crest*(1.-smoothstep(.0,.5,foam))*smoothstep(.15,.6,crest);
+let drag=smoothstep(.55,.9,vn(vec2f(q.x*.08,q.y*2.2+T*.05)))*.06*smoothstep(60.,6.,q.y);
+let wink=clamp(cl*(.25+.35*u.fo.x)+drag+clamp(lob,0.,1.)*.12+ch*.08*u.fo.x,0.,1.);
+let spk=step(1.-clamp(lob,0.,1.)*.75,h2(cell+floor(T*3.)))*smoothstep(.2,.8,twk);
+return fo(vec4f(mix(c,skyc(vec3f(V.x,.01,V.z)),fog)*al,al),vec4f(0,1,0,dist),vec4f(1.,wink,max(spk,foam*.8),clamp(fr2*1.2+streak,0.,1.)));}       // translucent near shore: drowned rocks show as pale shadows
+var alb=vec3f(.56,.50,.42);if(v.m>1.5){alb=vec3f(.42,.38,.32);}else if(v.m>.5){alb=vec3f(.40,.36,.31);}
+let brush=vn(vec2f(v.w.x*1.4-v.w.y*2.,v.w.y*22.+v.w.z*3.));   // ink: long strokes along the bedding, not speckle
+alb*=mix(.85+.3*vn(v.w.xz*6.+v.w.y*3.),.8+.45*smoothstep(.3,.75,brush),u.ik.x);
+let wet=1.-smoothstep(u.lt.w,u.lt.w+.12+.25*u.fo.x,v.w.y);alb*=1.-.35*wet;   // wet band just above the waterline
+let fz=smoothstep(u.lt.w+.02+.12*u.fo.x*(.6+.4*sin(u.cp.w*1.7+v.w.x*3.)),u.lt.w,v.w.y)*step(u.lt.w-.03,v.w.y);
+if(v.m<1.5){alb=mix(alb,vec3f(1.,1.,.98),fz*(.35+.65*u.fo.x)*smoothstep(.3,.6,vn(v.w.xz*9.+u.cp.w)));}
+let wh=waveH(v.w.xz);
+if(v.m<2.5&&v.w.y<wh){let bodyw=lit(vec3f(0,1,0),vec3f(.10,.18,.22));let rk=lit(normalize(v.n),alb);
+return fo(vec4f(mix(bodyw,rk,.3),1),vec4f(0,1,0,dist),vec4f(1.,.12,0.,0.));}          // under the passing wave: reads as water
+let band=1.-smoothstep(0.,.025+.05*u.fo.x,v.w.y-wh);
+if(v.m<2.5&&band>.01){let fz2=band*smoothstep(.25,.55,vn(v.w.xz*14.+u.cp.w*1.5));
+return fo(vec4f(mix(lit(normalize(v.n),alb),vec3f(.95,.95,.93),fz2),1),vec4f(normalize(v.n),dist),vec4f(0.,0.,fz2,0.));}
+return fo(vec4f(lit(normalize(v.n),alb),1),vec4f(normalize(v.n),dist),vec4f(0));}
+struct GO{@builtin(position) p:vec4f,@location(0) c:vec3f,@location(1) w:vec3f};
+@vertex fn vG(@builtin(vertex_index) vi:u32,@builtin(instance_index) ii:u32)->GO{let a=gr[ii*2u];let b=gr[ii*2u+1u];
+let seg=vi/6u;let k=vi%6u;var tt=array<f32,6>(0,0,1,0,1,1);var ss=array<f32,6>(-1,1,1,-1,1,-1);
+let t=(f32(seg)+tt[k])/8.;let h=a.z;let lean=a.w;
+let gy=floor(b.z/100.)/100.;let ph=b.z-floor(b.z/100.)*100.;let root=vec3f(a.x,gy,a.y);let T=u.cp.w;
+let gust=u.fo.z*(.5+.5*sin(T*.7-a.x*.8+a.y*.3));                         // gusts roll across the clump
+let sway=(.03+.22*u.fo.x)*sin(T*(1.3+u.fo.y*1.6)+ph)+.9*gust+.25*u.fo.x;  // steady push grows with the force
+let wd=normalize(vec2f(.55,-.35));
+let P0=root+vec3f(lean*h*pow(t,1.6)*1.2,h*(t-.25*pow(t,2.4)),0.)+vec3f(wd.x,0.,wd.y)*sway*h*t*t;
+let side=normalize(cross(vec3f(0,1,0),normalize(P0-u.cp.xyz)));let w=b.x*(1.-t*.92);
+let P=P0+side*w*ss[k];var o:GO;o.p=proj(P);
+var col=vec3f(.30,.34,.22)*b.y;let plume=b.w>.5&&u.sn.x>.5&&t>.78;if(plume){col=vec3f(.86,.84,.78);}
+o.c=lit(vec3f(0,.6,-.8),col);o.w=P;return o;}
+@fragment fn fG(v:GO)->FO{let V=normalize(v.w-u.cp.xyz);return fo(vec4f(v.c,1),vec4f(-V,length(v.w-u.cp.xyz)),vec4f(0));}
+@group(0)@binding(4) var<storage,read> ps:array<vec4f>;
+struct PO{@builtin(position) p:vec4f,@location(0) uv:vec2f,@location(1) a:f32,@location(2) c:vec3f};
+@vertex fn vP(@builtin(vertex_index) vi:u32,@builtin(instance_index) ii:u32)->PO{let a=ps[ii*2u];let b=ps[ii*2u+1u];
+var q=array<vec2f,6>(vec2f(-1,-1),vec2f(1,-1),vec2f(1,1),vec2f(-1,-1),vec2f(1,1),vec2f(-1,1));let k=q[vi];
+let P=a.xyz+(u.cr.xyz*k.x+u.cu.xyz*k.y)*a.w;var o:PO;o.p=proj(P);o.uv=k;o.a=b.w;o.c=b.xyz;return o;}
+@fragment fn fP(v:PO)->FO{let r=length(v.uv);if(r>1.){discard;}let a=v.a*(1.-r*r);var o=fo(vec4f(v.c*a,a),vec4f(0),vec4f(0,0,a,0));o.s=vec4f(a,0,0,a);return o;}   // spray mask
+struct BO{@builtin(position) p:vec4f,@location(0) uv:vec2f,@location(1) @interpolate(flat) k:u32};
+@vertex fn vB(@builtin(vertex_index) vi:u32,@builtin(instance_index) ii:u32)->BO{
+var q=array<vec2f,6>(vec2f(-1,-1),vec2f(1,-1),vec2f(1,1),vec2f(-1,-1),vec2f(1,1),vec2f(-1,1));let k=q[vi];
+var C=u.kt.xyz;var s=vec2f(1.3,.5);
+if(ii==1u){C=vec3f(u.ex.w,1.2,2600.);s=vec2f(18.,6.);}
+if(ii==2u){C=vec3f(u.ex.x,2.6,u.ex.y);s=vec2f(7.5,5.8);}
+if((ii==0u&&u.kt.w<.5)||(ii==1u&&u.ex.w<-1e4)||(ii==2u&&u.ex.y<1.)){C=vec3f(0,-1e5,1);}
+let P=C+u.cr.xyz*k.x*s.x+u.cu.xyz*k.y*s.y;var o:BO;o.p=proj(P);o.uv=k;o.k=ii;return o;}
+fn seg(p:vec2f,a:vec2f,b:vec2f)->f32{let pa=p-a;let ba=b-a;let h=clamp(dot(pa,ba)/dot(ba,ba),0.,1.);return length(pa-ba*h);}
+fn fBc(v:BO)->vec4f{let p=v.uv;let night=u.lt.z;let T=u.cp.w;
+if(v.k==0u){let fl=sin(T*2.)*.08;                     // kite: one curved stroke, slightly forked tail
+let d=min(min(seg(p,vec2f(-.95,.1+fl),vec2f(-.4,.35)),seg(p,vec2f(-.4,.35),vec2f(0.,0.))),min(min(seg(p,vec2f(0.,0.),vec2f(.45,.35)),seg(p,vec2f(.45,.35),vec2f(.95,.1+fl))),seg(p,vec2f(0.,0.),vec2f(.05,-.5))));
+if(d>.07){discard;}return vec4f(vec3f(.12,.11,.1),1);}
+if(v.k==1u){                                          // ship: hull dash + superstructure; at night only lights
+if(night>.5){let L=min(min(length(p-vec2f(-.6,-.2)),length(p-vec2f(-.1,-.1))),min(length(p-vec2f(.35,-.1)),length(p-vec2f(.55,.35))));
+if(L>.06){discard;}return vec4f(.95,.95,.9,1);}
+let hull=abs(p.y+.5)<.18&&abs(p.x)<.9;let sup=p.x>.3&&p.x<.55&&p.y>-.4&&p.y<.2;if(!(hull||sup)){discard;}
+return vec4f(skyc(vec3f(0,.01,1))*.78,1);}
+let hull=p.y<-.35&&p.y>-.62&&abs(p.x)<.9-(-.35-p.y)*1.2;let mast=abs(p.x+.05)<.03&&p.y>-.4&&p.y<.45;
+let pole=seg(p,vec2f(-.05,.45),vec2f(.95,-.05))<.025;
+let fl=u.ex.z;let fp=p-vec2f(-.25,.05);let fh=.35+.5*fl+.05*sin(T*20.);
+let flame=fl>.02&&abs(fp.x)<.16*(1.-clamp(fp.y/fh,0.,1.))&&fp.y>-.12&&fp.y<fh;
+if(flame){return vec4f(mix(vec3f(.95,.45,.18),vec3f(1.,.85,.55),clamp(1.-fp.y/fh,0.,1.)),1);}
+if(!(hull||mast||pole)){discard;}
+if(fl<.02&&length(p-vec2f(-.25,-.25))<.05){return vec4f(.95,.8,.5,1);}   // small lamp before the flare
+return vec4f(.03,.03,.035,1);}
+@group(0)@binding(5) var<storage,read> an:array<vec4f>;
+struct AO{@builtin(position) p:vec4f,@location(0) uv:vec2f,@location(1) @interpolate(flat) q:vec4f,@location(2) d:f32};
+@vertex fn vA(@builtin(vertex_index) vi:u32,@builtin(instance_index) ii:u32)->AO{let a=an[ii*2u];let b=an[ii*2u+1u];
+var q=array<vec2f,6>(vec2f(-1,-1),vec2f(1,-1),vec2f(1,1),vec2f(-1,-1),vec2f(1,1),vec2f(-1,1));let k=q[vi];
+var hy=a.w;if(b.x<.5){hy=a.w*.7;}if(b.x>1.5){hy=a.w*.45;}
+let P=a.xyz+u.cr.xyz*k.x*a.w+u.cu.xyz*k.y*hy;var o:AO;o.p=proj(P);o.uv=k;o.q=b;o.d=length(a.xyz-u.cp.xyz);return o;}
+@fragment fn fA(v:AO)->FO{let p=v.uv;let t=v.q.x;var hit=false;var paper=false;
+if(t<.5){                                             // crab, front view: flat carapace, splayed legs, small claws (raised when displaying)
+let car=length((p-vec2f(0.,-.05))*vec2f(1.6,3.))<1.;
+var leg=false;for(var j=0;j<4;j++){let fj=f32(j);let ph=sin(v.q.z+fj*1.6)*.06;
+for(var sd=-1.;sd<2.;sd+=2.){let a0=vec2f(sd*.45,-.05-fj*.05);let kn=vec2f(sd*(.72+fj*.06),.15-fj*.05+ph);let ft=vec2f(sd*(.9+fj*.03),-.55-fj*.05);
+if(seg(p,a0,kn)<.06||seg(p,kn,ft)<.05){leg=true;}}}
+let cl=v.q.y;var claw=false;for(var sd=-1.;sd<2.;sd+=2.){let s0=vec2f(sd*.3,.05);let s1=vec2f(sd*(.5-cl*.1),.45+cl*.4);
+if(seg(p,s0,s1)<.07||length(p-s1)<.14){claw=true;}}
+hit=car||leg||claw;}
+else if(t<1.5){hit=length(p*vec2f(1.,1.6))<.8;paper=true;}   // gull resting: a paper-white fleck on the dark rock
+else{let f=v.q.y*.35;                                 // gull in flight: two shallow arcs, wings flap
+let d=min(min(seg(p,vec2f(-.95,.1-f),vec2f(-.45,.3+f*.5)),seg(p,vec2f(-.45,.3+f*.5),vec2f(0.,0.))),min(seg(p,vec2f(0.,0.),vec2f(.45,.3+f*.5)),seg(p,vec2f(.45,.3+f*.5),vec2f(.95,.1-f))));
+hit=d<.11;}
+if(!hit||h2(floor(v.p.xy))>v.q.w){discard;}         // dithered fade, no transparency sorting needed
+var c=vec3f(.05,.045,.04);var dd=v.d;if(t>.5){dd=select(30.,6.,t<1.5);}
+if(paper){c=vec3f(.97,.96,.93);}
+return fo(vec4f(c,1),vec4f(0,0,-1,dd),vec4f(0,0,select(0.,1.,paper),0));}
+@fragment fn fB(v:BO)->FO{let c=fBc(v);var dd=6.;if(v.k==1u){dd=40.;}if(v.k==2u){dd=13.;}
+let flame=v.k==2u&&c.r>.9&&c.b<.6;return fo(c,vec4f(0,0,-1,dd),vec4f(0,0,0,select(0.,1.,flame)));}
+@group(1)@binding(0) var tc:texture_2d<f32>;@group(1)@binding(1) var tn:texture_2d<f32>;@group(1)@binding(2) var tw:texture_2d<f32>;@group(1)@binding(3) var tsp:texture_2d<f32>;
+fn pw(a:f32,b:f32,c:f32,t:f32)->f32{return select(mix(a,b,clamp(t,0.,1.)),mix(b,c,clamp(t-1.,0.,1.)),t>1.);}
+const SG=array<vec4f,30>(vec4f(-0.406,-1.698,-0.718,-1.331),vec4f(-0.406,-1.698,-0.094,-1.331),vec4f(-0.624,-1.276,-0.187,-1.276),vec4f(-0.663,-1.019,-0.148,-1.019),vec4f(-0.406,-1.276,-0.406,-0.356),vec4f(-0.585,-0.785,-0.507,-0.629),vec4f(-0.226,-0.785,-0.304,-0.629),vec4f(-0.718,-0.34,-0.094,-0.34),vec4f(0.117,-1.604,0.702,-1.604),vec4f(0.172,-0.996,0.647,-0.996),vec4f(0.078,-0.34,0.741,-0.34),vec4f(0.406,-1.604,0.406,-0.34),vec4f(0.53,-0.707,0.624,-0.551),vec4f(-0.702,0.395,-0.702,0.941),vec4f(-0.702,0.941,0.702,0.941),vec4f(0.702,0.395,0.702,0.941),vec4f(-0.328,0.239,-0.328,0.863),vec4f(0.328,0.239,0.328,0.863),vec4f(-0.53,0.372,-0.125,0.372),vec4f(-0.53,0.59,-0.125,0.59),vec4f(0.125,0.372,0.53,0.372),vec4f(0.125,0.59,0.53,0.59),vec4f(-0.624,1.074,0.624,1.074),vec4f(-0.39,1.198,0.39,1.198),vec4f(-0.39,1.198,-0.39,1.417),vec4f(0.39,1.198,0.39,1.417),vec4f(-0.39,1.417,0.39,1.417),vec4f(-0.273,1.495,-0.172,1.62),vec4f(0.273,1.495,0.172,1.62),vec4f(-0.702,1.698,0.702,1.698));
+const DSC=.3;                                           // seascape: distances ~3x episode 01, so depth fade is scaled
+fn tone(c:vec3f)->vec3f{var x=c;x=(x*(2.51*x+.03))/(x*(2.43*x+.59)+.14);return pow(clamp(x,vec3f(0.),vec3f(1.)),vec3f(1./2.2));}
+fn tk(uv:vec2f,st:f32)->f32{let c4=textureSampleLevel(tc,smp,uv,0.);let nd=textureSampleLevel(tn,smp,uv,0.);let w=textureSampleLevel(tw,smp,uv,0.);let d=min(nd.w,900.)*DSC;
+let Ls=dot(tone(c4.rgb/max(c4.a,1e-4)),vec3f(.299,.587,.114))*c4.a+(1.-c4.a);
+var k=clamp((1.-Ls)*pw(1.25,1.7,2.3,st)-pw(.08,.24,.52,st),0.,1.)*exp(-d*pw(.075,.11,.16,st))*mix(1.,.3,smoothstep(.85,.97,nd.y)*step(nd.w,900.));
+if(w.r>.5){k=w.g+max(0.,k-.35)*.35;}                  // water is blank paper: only surf lines, drag and drowned-rock shadows
+return k;}
+struct PV{@builtin(position) p:vec4f,@location(0) uv:vec2f};
+@vertex fn vPost(@builtin(vertex_index) i:u32)->PV{var q=array<vec2f,3>(vec2f(-1,-1),vec2f(3,-1),vec2f(-1,3));var o:PV;o.p=vec4f(q[i],0,1);o.uv=vec2f(q[i].x*.5+.5,.5-q[i].y*.5);return o;}
+@fragment fn fPost(i:PV)->@location(0) vec4f{let c4=textureSampleLevel(tc,smp,i.uv,0.);let nd=textureSampleLevel(tn,smp,i.uv,0.);let w=textureSampleLevel(tw,smp,i.uv,0.);
+let asp=u.res.x/u.res.y;let q=vec2f(i.uv.x*2.-1.,1.-i.uv.y*2.);
+let rdv=normalize(u.cf.xyz+u.cr.xyz*q.x*u.res.z*asp+u.cu.xyz*(q.y-u.res.w)*u.res.z);
+let real=tone(c4.rgb/max(c4.a,1e-4)*c4.a+c4.rgb*(1.-c4.a));
+if(u.ik.x<.5){return vec4f(real,1);}
+let st=u.ik.y;let nf=u.lt.z;let px=1./vec2f(textureDimensions(tn));let d=min(nd.w,900.)*DSC;let sp=i.uv*u.res.xy;
+let fb=normalize(vec2f(1.,.35*(vn(sp*.008)-.5)))*px*(1.8+2.6*vn(sp*.03))*clamp(u.res.y/900.,.7,2.);
+var k=tk(i.uv,st)*.36+(tk(i.uv+fb,st)+tk(i.uv-fb,st))*.22+(tk(i.uv+fb*2.6,st)+tk(i.uv-fb*2.6,st))*.1;
+k*=1.-.45*nf;
+let dry=smoothstep(.35,.75,vn(vec2f(sp.x*.006,sp.y*.16)+vec2f(nd.w*.3,0.)));
+if(w.r<.5){k*=mix(1.,.55+.45*dry,smoothstep(.45,.85,k)*smoothstep(.6,2.2,st));}
+let nT=pw(5.,3.,2.,st);let s5=k*nT;k=(floor(s5)+smoothstep(.12,.88,fract(s5)))/nT;
+let bw=pw(1.,2.4,2.4,st)*(.6+.9*vn(sp*vec2f(.02,.011)))*clamp(u.res.y/1080.,.6,2.);
+var e=0.;var e2=0.;var lp=-8.*min(nd.w,60.);var lp2=lp;let dims=vec2f(textureDimensions(tn));
+let pr=smoothstep(.2,.85,vn(sp*vec2f(.009,.022)+vec2f(nd.w*.02,0.)));               // brush pressure varies along the stroke
+for(var j=0;j<8;j++){let a=f32(j)*.7854;let o=vec2f(cos(a),sin(a))*bw*.55;
+let b=textureLoad(tn,vec2i(clamp(i.uv*dims+o,vec2f(0.),dims-1.)),0);lp+=min(b.w,60.);e=max(e,max(1.-dot(b.xyz,nd.xyz),0.)*1.6);
+let b2=textureLoad(tn,vec2i(clamp(i.uv*dims+o*(3.2+2.*pr),vec2f(0.),dims-1.)),0);lp2+=min(b2.w,60.);e2=max(e2,max(1.-dot(b2.xyz,nd.xyz),0.)*1.6);}
+e=max(e,clamp(abs(lp)/max(nd.w,.1)*1.6,0.,1.));e2=max(e2,clamp(abs(lp2)/max(nd.w,.1)*1.6,0.,1.));
+e=max(e,e2*pr*.9);                                     // thin where the brush lifts, thick where it presses
+e*=.45+.55*smoothstep(.25,.6,vn(sp*vec2f(.05,.013)));    // occasional breaks along the line
+let fe=exp(-d*pw(.09,.13,.32,st));
+e=clamp(e,0.,1.)*fe*smoothstep(.15,.55,vn(sp*vec2f(.35,.06))+e*.6);if(nd.w>900.){e=0.;}
+if(w.r>.5){e*=.35;}                                    // water: only faint contour where it meets rock
+k=max(k,e*pw(.85,.95,.95,st));
+let sb=textureSampleLevel(tsp,smp,i.uv,0.).r;var mx=0.;          // spray mask only; soft halo: 8 taps x 2 radii averaged (blurred, pale)
+for(var q=0;q<8;q++){let an=f32(q)*.785+.4;let dd=vec2f(cos(an),sin(an))*px;
+mx+=textureSampleLevel(tsp,smp,i.uv+dd*2.2,0.).r+textureSampleLevel(tsp,smp,i.uv+dd*4.5,0.).r;}
+mx/=16.;
+let rim=smoothstep(.02,.4,mx-sb*.8)*(1.-smoothstep(.3,.9,sb))*(1.-nf);
+k=max(k,rim*(.2+.1*vn(sp*.4)));
+let g=.94+.04*vn(sp*.6)+.025*vn(sp*vec2f(.05,.8));let pap=mix(vec3f(.935,.905,.84),vec3f(.953,.933,.89)*1.04,u.ik.z)*g;
+let wash=mix(pap,pap*vec3f(.74,.74,.76),nf*.7);var col=mix(wash,vec3f(.075,.07,.065),pow(k,1.1));
+col=mix(col,pap*1.03,clamp(w.b,0.,1.)*mix(.5,1.,nf));
+let mdk=smoothstep(.99962,.99975,dot(rdv,normalize(u.mv.xyz)))*step(.5,u.mv.w)*(1.-c4.a);col=mix(col,pap*1.04,mdk);
+let sdk=smoothstep(.99982,.99988,dot(rdv,normalize(u.dv.xyz)))*u.sd.w*(1.-c4.a);col=mix(col,vec3f(.74,.22,.13),sdk);
+col=mix(col,mix(vec3f(.80,.36,.15),vec3f(.95,.78,.5),clamp(w.a*1.5-.5,0.,1.)),clamp(w.a,0.,1.)*u.ex.z);
+let sc=vec2f(1.-.06/asp,.58);let sq=(i.uv-sc)*vec2f(asp,1.)/.03;
+if(all(abs(sq)<vec2f(1.,2.))&&u.ik.w<.5){var dm=abs(max(abs(sq.x)-.95,abs(sq.y)-1.95));
+var sgv=SG;for(var j=0;j<30;j++){let S=sgv[j];let pa=sq-S.xy;let ba=S.zw-S.xy;let hh=clamp(dot(pa,ba)/dot(ba,ba),0.,1.);dm=min(dm,length(pa-ba*hh));}
+let rr=1.-smoothstep(.075,.11,dm+.03*(vn(sq*7.)-.5));col=mix(col,vec3f(.70,.19,.12)*(.92+.08*vn(sq*9.)),rr*(.85+.15*vn(sq*3.)));}
+return vec4f(col,1.);}
+`;
+const cv = $("#c"), Ub = new Float32Array(68);
+let ink = Q.get("ink") != "0", INKS = +(Q.get("style") ?? 2.2);
+let G = null, scale = FT != null ? 1 : .75, cap = null, paused = document.hidden, raf = 0, recovering = 0, SC = null;
+async function gpu() {
+const ad = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+if (!ad) throw Error("找不到可用的 GPU 介面卡");
+const dev = await ad.requestDevice(), fmt = navigator.gpu.getPreferredCanvasFormat(), cx = cv.getContext("webgpu");
+dev.lost.then(info => { if (G && G.dev !== dev) return; G = null; console.warn("device lost", info.reason, info.message); if (info.reason != "destroyed") recover(info.message); });
+if (!OFF) cx.configure({ device: dev, format: fmt, alphaMode: "opaque", usage: 17 });
+if (!SC) { buildReef(); const st = stackTex(); SC = { st, mesh: buildMesh(), grass: buildGrass() }; }
+const mod = dev.createShaderModule({ code: WS });
+const bgl = dev.createBindGroupLayout({ entries: [{ binding: 0, visibility: 3, buffer: {} }, { binding: 1, visibility: 1, buffer: { type: "read-only-storage" } },
+{ binding: 2, visibility: 2, texture: {} }, { binding: 3, visibility: 2, sampler: {} }, { binding: 4, visibility: 1, buffer: { type: "read-only-storage" } }, { binding: 5, visibility: 1, buffer: { type: "read-only-storage" } }] });
+const layout = dev.createPipelineLayout({ bindGroupLayouts: [bgl] }), DS = { format: "depth24plus", depthWriteEnabled: true, depthCompare: "less" };
+const T3 = (b0, mask) => [{ format: HF, ...(b0 ? { blend: b0 } : {}) }, { format: HF, ...(mask ? { writeMask: 0 } : {}) }, { format: "rgba8unorm", ...(mask ? { blend: BLEND } : {}) },
+{ format: "r8unorm", ...(mask ? { blend: BLEND } : {}) }];
+const P = (vs, fs, extra = {}) => dev.createRenderPipelineAsync({ layout, vertex: { module: mod, entryPoint: vs, ...(extra.vb || {}) },
+fragment: { module: mod, entryPoint: fs, targets: T3() }, depthStencil: extra.ds || DS, primitive: { cullMode: "none" } });
+const HF = "rgba16float", BLEND = { color: { srcFactor: "one", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } };
+const bglP = dev.createBindGroupLayout({ entries: [0, 1, 2, 3].map(b => ({ binding: b, visibility: 2, texture: {} })) });
+const [pSky, pSt, pM, pG, pB, pP, pW, pPost, pA] = await Promise.all([      // compiled asynchronously
+P("vSky", "fSky", { ds: { format: "depth24plus", depthWriteEnabled: false, depthCompare: "always" } }),
+P("vSt", "fSt"),
+P("vM", "fM", { vb: { buffers: [{ arrayStride: 32, attributes: [{ shaderLocation: 0, offset: 0, format: "float32x4" }, { shaderLocation: 1, offset: 12, format: "float32x4" }] }] } }),
+P("vG", "fG"),
+P("vB", "fB"),
+dev.createRenderPipelineAsync({ layout, vertex: { module: mod, entryPoint: "vP" }, fragment: { module: mod, entryPoint: "fP", targets: T3(BLEND, 1) },
+depthStencil: { format: "depth24plus", depthWriteEnabled: false, depthCompare: "less" }, primitive: { cullMode: "none" } }),
+dev.createRenderPipelineAsync({ layout, vertex: { module: mod, entryPoint: "vM", buffers: [{ arrayStride: 32, attributes: [{ shaderLocation: 0, offset: 0, format: "float32x4" }, { shaderLocation: 1, offset: 12, format: "float32x4" }] }] },
+fragment: { module: mod, entryPoint: "fM", targets: T3(BLEND) }, depthStencil: DS, primitive: { cullMode: "none" } }),
+dev.createRenderPipelineAsync({ layout: dev.createPipelineLayout({ bindGroupLayouts: [bgl, bglP] }), vertex: { module: mod, entryPoint: "vPost" },
+fragment: { module: mod, entryPoint: "fPost", targets: [{ format: fmt }] }, primitive: { cullMode: "none" } }),
+P("vA", "fA")]);
+const buf = (d, us) => { const b = dev.createBuffer({ size: Math.max(16, d.byteLength), usage: us }); dev.queue.writeBuffer(b, 0, d); return b; };
+const ub = dev.createBuffer({ size: Ub.byteLength, usage: 72 });
+const vb = buf(SC.mesh.data, 40), gb = buf(SC.grass, 136), pb = dev.createBuffer({ size: PS.data.byteLength, usage: 136 }), ab = dev.createBuffer({ size: AN.byteLength, usage: 136 });
+const tex = dev.createTexture({ size: [1024, 448], format: "rgba8unorm", usage: 22 });
+dev.queue.copyExternalImageToTexture({ source: SC.st.c }, { texture: tex }, [1024, 448]);
+const bg = dev.createBindGroup({ layout: bgl, entries: [{ binding: 0, resource: { buffer: ub } }, { binding: 1, resource: { buffer: gb } },
+{ binding: 2, resource: tex.createView() }, { binding: 3, resource: dev.createSampler({ magFilter: "linear", minFilter: "linear" }) }, { binding: 4, resource: { buffer: pb } }, { binding: 5, resource: { buffer: ab } }] });
+G = { dev, fmt, cx, pSky, pSt, pM, pG, pB, pP, pW, pPost, pA, bglP, ub, vb, pb, ab, bg, nG: SC.grass.length / 8 };
+size(1);
+}
+async function recover(msg) {
+if (recovering) return; recovering = 1; $("#rc").classList.add("on");
+for (let i = 0; i < 4; i++) {
+await new Promise(r => setTimeout(r, 300 * 2 ** i));
+try { await gpu(); recovering = 0; $("#rc").classList.remove("on"); return; } catch (e) { console.warn("re-init failed", e); }
+}
+fb("GPU 無法恢復：" + (msg || ""));
+}
+function size(force) {
+if (!G) return;
+const dpr = Math.min(devicePixelRatio || 1, EMB.on && MOB ? 1.5 : 2), w = cv.clientWidth || innerWidth, h = cv.clientHeight || innerHeight;
+const k = Math.min(dpr, (MOB ? 1280 : 1920) / Math.max(w, h)) * scale;
+const W = Math.max(2, Math.round(w * k)), H = Math.max(2, Math.round(h * k));
+if (!force && W == cv.width && H == cv.height) return;
+cv.width = W; cv.height = H;
+for (const t of ["ot", "dt", "tc", "tn", "tw", "ts"]) G[t] && G[t].destroy();
+const T = f => G.dev.createTexture({ size: [W, H], format: f, usage: 20 });
+G.dt = G.dev.createTexture({ size: [W, H], format: "depth24plus", usage: 16 }); G.tc = T("rgba16float"); G.tn = T("rgba16float"); G.tw = T("rgba8unorm"); G.ts = T("r8unorm");
+G.bgP = G.dev.createBindGroup({ layout: G.bglP, entries: [G.tc, G.tn, G.tw, G.ts].map((t, b) => ({ binding: b, resource: t.createView() })) });
+if (OFF) G.ot = G.dev.createTexture({ size: [W, H], format: G.fmt, usage: 17 });
+}
+let rzT = 0; const onRz = () => { clearTimeout(rzT); rzT = setTimeout(() => size(), 120); };
+addEventListener("resize", onRz); screen.orientation && screen.orientation.addEventListener("change", onRz);
+function render(t) {
+const c = camAt(t), asp = cv.width / cv.height;
+const FV = FOVT * (EMB.on ? Math.max(1, 1.45 / asp) ** .5 : 1);          // embed: portrait boxes get a wider view
+const dv = cPlan(LT.sd, FV, asp), mv = moonShow(LT.md, FV, asp), wl = WLA + CLK.tide * WLB;
+Ub.set([...c.p, t, ...c.f, 0, ...c.r, 0, ...c.u, 0, cv.width, cv.height, FV, SHIFT,
+...LT.sd, LT.sun * (LT.el > -1 ? 1 : 0), ...LT.md, LT.moon > .01 ? 1 : 0,
+F.v, F.spd, F.g, F.lv, CLK.tide, CLK.illum, CLK.h, CLK.spring, LT.sun, LT.moon, LT.night, wl,
+...SC.st.quad, CLK.season == "plume" ? 1 : 0, CLK.season == "summer" ? 1 : 0, 0, 0,
+...dv, 0, ...mv, LT.mel > -1 && CLK.illum > .03 && LT.el < 2 ? 1 : 0,
+FB.x, FB.z, DY.flare, DY.shipX, DY.kite[0], DY.kite[1], DY.kite[2], DY.kiteOn, ink ? 1 : 0, INKS, EMB.on ? 1 : 0, Q.get("seal") == "0" ? 1 : 0]);
+G.dev.queue.writeBuffer(G.pb, 0, PS.data); G.dev.queue.writeBuffer(G.ab, 0, AN);
+const dev = G.dev; dev.queue.writeBuffer(G.ub, 0, Ub);
+const tex = OFF ? G.ot : G.cx.getCurrentTexture(), enc = dev.createCommandEncoder();
+const CA = (t, c) => ({ view: t.createView(), loadOp: "clear", storeOp: "store", clearValue: c });
+const pass = enc.beginRenderPass({ colorAttachments: [CA(G.tc, [0, 0, 0, 0]), CA(G.tn, [0, 0, 0, 999]), CA(G.tw, [0, 0, 0, 0]), CA(G.ts, [0, 0, 0, 0])],
+depthStencilAttachment: { view: G.dt.createView(), depthClearValue: 1, depthLoadOp: "clear", depthStoreOp: "store" } });
+pass.setBindGroup(0, G.bg);
+pass.setPipeline(G.pSky); pass.draw(3);
+pass.setPipeline(G.pSt); pass.draw(6);
+pass.setPipeline(G.pM); pass.setVertexBuffer(0, G.vb); pass.draw(SC.mesh.nRock);                 // rocks, bank, seabed
+pass.setPipeline(G.pB); pass.draw(6, 3);                                                         // kite, ship, fishing boat
+pass.setPipeline(G.pA); pass.draw(6, NAN);                                                       // crabs (drawn before the water so a rising tide covers them), gulls
+pass.setPipeline(G.pW); pass.setVertexBuffer(0, G.vb); pass.draw(SC.mesh.n - SC.mesh.nRock, 1, SC.mesh.nRock);   // translucent water over drowned rocks
+pass.setPipeline(G.pG); pass.draw(48, G.nG);
+pass.setPipeline(G.pP); pass.draw(6, PS.n);                                                      // spray and leaping fish
+pass.end();
+const post = enc.beginRenderPass({ colorAttachments: [CA(tex, [0, 0, 0, 1])] });                // ink post-process
+post.setPipeline(G.pPost); post.setBindGroup(0, G.bg); post.setBindGroup(1, G.bgP); post.draw(3); post.end();
+let buf, W = tex.width, H = tex.height, bpr = Math.ceil(W * 4 / 256) * 256;
+if (cap) { buf = dev.createBuffer({ size: bpr * H, usage: 9 }); enc.copyTextureToBuffer({ texture: tex }, { buffer: buf, bytesPerRow: bpr }, [W, H]); }
+dev.queue.submit([enc.finish()]);
+if (buf) {
+const done = cap; cap = null;
+buf.mapAsync(1).then(() => {
+const src = new Uint8Array(buf.getMappedRange()), img = new ImageData(W, H), o = img.data, bgra = G.fmt[0] == "b";
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const s = y * bpr + x * 4, d = (y * W + x) * 4;
+o[d] = src[s + (bgra ? 2 : 0)]; o[d + 1] = src[s + 1]; o[d + 2] = src[s + (bgra ? 0 : 2)]; o[d + 3] = 255; }
+buf.destroy();
+const k = document.createElement("canvas"); k.width = W; k.height = H; const g = k.getContext("2d"); g.putImageData(img, 0, 0);
+if (Q.has("stamp")) { g.font = "13px monospace"; g.fillStyle = "#000a"; g.fillRect(0, 0, W, 20); g.fillStyle = "#fff";
+g.fillText(`seed ${SEED} ${W}x${H} cam ${camI} wind ${F.lv} t ${CLK.h.toFixed(2)} moon ${CLK.illum.toFixed(2)} tide ${CLK.tide.toFixed(2)} sun ${LT.el.toFixed(0)}°`, 6, 14); }
+done(k.toDataURL("image/png"));
+});
+}
+return c;
+}
+const ui = $("#ui"), hud = $("#hud");
+let hudOn = Q.get("hud") != "0", shot = 0;
+const PRE = [                                          // test presets (same as the URL params)
+["老鷹", { t: 10, kite: 1 }], ["貨輪・日", { t: 10, ship: 1 }], ["貨輪・夜", { t: 22, ship: 1 }],
+["蹦火", { t: 22, fire: 1, wind: 0 }], ["漲潮大浪", { tide: .7, wind: 3 }], ["自動", null]];
+let preOn = -1;
+function preset(i) {
+const o = PRE[i][1]; preOn = o ? i : -1;
+TEST.kite = TEST.ship = TEST.fire = false; CLK.fixT = null; CLK.fixTide = null; F.auto = true;
+if (o) { if ("t" in o) CLK.fixT = o.t; if ("tide" in o) CLK.fixTide = o.tide; if ("wind" in o) { F.lv = o.wind; F.auto = false; }
+if (o.kite) { TEST.kite = true; DY.kiteOn = 0; } if (o.ship) { TEST.ship = true; DY.ship.on = 1; DY.ship.t0 = simT - 150; } if (o.fire) { TEST.fire = true; DY.fireT = 2; } }
+CLK.upd(); light();
+}
+function drawUI() {
+ui.innerHTML = LN.map((n, i) => `<button data-w=${i} class=${F.lv == i ? "on" : ""}>${n}</button>`).join("") +
+`<button data-k=c>${camI < 0 ? "手卷" : ["左", "中", "右"][camI]}</button><button data-k=i>${ink ? "水墨" : "寫實"}</button>${[["工筆", .9], ["寫意", 1.5], ["極簡", 2.2]].map(([n, v]) => `<button data-s=${v} class=${INKS == v ? "on" : ""}>${n}</button>`).join("")}<span style="width:1em"></span>` +
+PRE.map((p, i) => `<button data-p=${i} class=${preOn == i ? "on" : ""}>${p[0]}</button>`).join("");
+}
+const act = { i() { ink = !ink; }, c() { camI = camI >= 2 ? -1 : camI + 1; }, h() { hudOn = !hudOn; }, p() { shot = 1; } };
+ui.onclick = e => { const d = e.target.dataset; if (d.w) { F.lv = +d.w; F.auto = false; } else if (d.p) preset(+d.p); else if (d.s) INKS = +d.s; else if (d.k) act[d.k](); drawUI(); };
+addEventListener("keydown", e => { const k = e.key.toLowerCase();
+if (k >= "1" && k <= "4") { F.lv = +k - 1; F.auto = false; } else if (k == "a") F.auto = true; else if (act[k]) act[k](); else return; drawUI(); });
+drawUI();
+let last = performance.now(), simT = 0, lastF = 0, cT = 0, qT = last, want = null, wantN = 0, stillDone = 0;
+function frame(now) {
+raf = 0; if (paused || (STILL && stillDone)) return;
+if (EMB.on && !OFF && now - lastF < 31) { raf = requestAnimationFrame(frame); return; }   // embed: 30fps cap
+lastF = now;
+const dt = Math.min(.1, (now - last) / 1e3); last = now;
+if (now - cT > 1e3) { cT = now; CLK.upd(); light(); }       // long sessions: keeps updating across midnight
+simT = FT ?? simT + dt; F.upd(dt, simT); if (SC) { dynUpd(FT != null ? 0 : dt, simT); lifeUpd(FT != null ? 0 : dt, simT); }
+if (G) {
+PF.push([now, dt * 1e3]); while (PF.length && now - PF[0][0] > 3e4) PF.shift();
+if (want && --wantN <= 1) { cap = want; want = null; }
+if (shot) { shot = 0; const n = `mojing-02-seed${SEED}-cam${camI}-w${F.lv}.png`; cap = u => dl(u, n); }
+A.upd(F, render(simT));
+if (FT == null && !SHOTS && now - qT > 2e3) {             // start at medium, measure 2 s, step up or down
+qT = now; const s = stats(2), tgt = 1e3 / TGT, ft = s.n ? 2e3 / s.n : tgt, old = scale;
+if (ft > tgt * 1.15) scale = Math.max(.5, scale - .1); else if (ft < tgt * .8) scale = Math.min(1, scale + .05);
+if (Math.abs(old - scale) > .01) size();
+}
+}
+if (hudOn) {
+const s = stats(), hh = CLK.h | 0, mm = (CLK.h % 1) * 60 | 0;
+hud.textContent = `fps30 ${s.fps}  worst1% ${s.worst1}ms\nres ${cv.width}x${cv.height}  scale ${scale.toFixed(2)}\n` +
+`${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}  sun ${LT.el.toFixed(1)}°  moon ${(CLK.illum * 100).toFixed(0)}%\n` +
+`tide ${CLK.tide.toFixed(2)}  spring ${CLK.spring.toFixed(2)}  season ${CLK.season}  fire ${CLK.fire ? "yes" : "no"}\n` +
+`force ${LN[F.lv]} v ${F.v.toFixed(2)} gust ${F.g.toFixed(2)} ${F.auto ? "auto" : "manual"}  cam ${camI < 0 ? "pan" : camI}\nrocks ${BL.length}  dry ${BL.filter(b => b.maxh > WLA + CLK.tide * WLB).length}  grass ${SC ? SC.grass.length / 8 : 0}`;
+hud.style.display = "";
+} else hud.style.display = "none";
+raf = OFF && G ? (G.dev.queue.onSubmittedWorkDone().then(() => { raf = requestAnimationFrame(frame); }), -1) : requestAnimationFrame(frame);
+}
+let inView = 1;
+const onVis = () => {
+paused = document.hidden || !inView;
+if (paused) { A.c && A.c.state == "running" && A.c.suspend(); }
+else { A.c && A.on && A.c.resume(); last = qT = performance.now(); PF.length = 0; raf || (raf = requestAnimationFrame(frame)); }
+};
+document.addEventListener("visibilitychange", onVis);
+EMB.on && "IntersectionObserver" in window && new IntersectionObserver(e => { inView = e[0].isIntersecting; onVis(); }).observe(cv);
+const grab = () => new Promise(r => { want = r; wantN = 3; });
+async function shots(levels = [0, 1, 3], t = "06:20") {
+const keep = [camI, CLK.fixT, F.lv], out = []; if (FT == null) FT = 8;
+const [h, m] = t.split(":"); CLK.fixT = +h + m / 60; CLK.upd(); light();
+for (const c of [0, 1, 2]) for (const l of levels) { camI = c; F.lv = l; F.v = LV[l]; out.push({ name: `cam${c}-w${l}`, url: await grab() }); }
+[camI, CLK.fixT, F.lv] = keep; F.v = LV[F.lv]; CLK.upd(); light(); drawUI(); return out;
+}
+async function sheet() {
+const s = await shots(), w = 480, h = 300, k = document.createElement("canvas"); k.width = w * 3; k.height = h * 3; const g = k.getContext("2d");
+for (let i = 0; i < 9; i++) { const im = new Image(); im.src = s[i].url; await im.decode(); g.drawImage(im, (i % 3) * w, (i / 3 | 0) * h, w, h);
+g.fillStyle = "#000"; g.font = "14px monospace"; g.fillText(s[i].name, (i % 3) * w + 8, (i / 3 | 0) * h + 20); }
+const url = k.toDataURL("image/png"); window.MOJING.lastSheet = url; dl(url, `mojing-02-v1.13-shots-seed${SEED}.png`); return s;
+}
+function dl(url, name) { const a = document.createElement("a"); a.href = url; a.download = name; a.click(); }
+window.MOJING = { F, CLK, LT, EMB, camAt, stats, shots, sheet, grab,
+lose: () => G && G.dev.destroy && (G.dev.lost.then(() => recover("test")), G.dev.destroy()),
+set(o) { "cam" in o && (camI = o.cam); "wind" in o && (F.lv = o.wind, F.v = LV[o.wind]); "freeze" in o && (FT = o.freeze);
+"t" in o && (CLK.fixT = o.t); "tide" in o && (CLK.fixTide = o.tide); CLK.upd(); light(); drawUI(); },
+bench: s => new Promise(r => setTimeout(() => r(stats(s)), s * 1e3)), get ready() { return !!G; } };
+$("#go").onclick = () => { A.start(); $("#ov").classList.add("off"); cv.classList.add("in"); };
+(async () => {
+if (!navigator.gpu) return fb("navigator.gpu 不存在");
+CLK.upd(); light(); raf = requestAnimationFrame(frame);
+try { await gpu(); } catch (e) { console.error(e); return fb(String(e.message || e)); }
+if (Q.has("bench")) MOJING.bench(+Q.get("bench") || 30).then(s => console.log("[MOJING bench]", JSON.stringify(s)));
+if (SHOTS) { $("#ov").classList.add("off"); cv.classList.add("in"); setTimeout(sheet, 600); }
+if (EMB.on) { cv.classList.add("in"); post("ready"); STILL && setTimeout(() => stillDone = 1, 300); }
+})();
+function post(m) { try { parent !== window && parent.postMessage({ mojing: m }, "*"); } catch {} }
+</script>
+</body>
+</html>

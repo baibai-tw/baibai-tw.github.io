@@ -85,7 +85,7 @@
   <script>
   /* 首頁主視覺：多套墨景，進首頁隨機抽一套；點資訊區的紅印「香」換下一套。新增一套就在 MJ 加一行 */
   window.KV = (function(){
-    const V = '20261119b', D = '/assets/mojing/';
+    const V = '20261120a', D = '/assets/mojing/';
     const MJ = [
       { f: 'mojing-01-baibai-embed.html', q: '&walk=1', title: '墨竹香塔', p: 'cover-3x4.webp', w: 'cover-16x10.webp' },
       { f: 'mojing-02-baibai-embed.html', q: '', title: '金山夫妻岩', p: 'mojing-02-cover-3x4.webp', w: 'mojing-02-cover-16x10.webp' }
@@ -94,7 +94,7 @@
     let i = Math.random() * MJ.length | 0, gpuOk = true;
     function show(n){
       i = (n + MJ.length) % MJ.length; const k = MJ[i];
-      pw.srcset = D + k.w; pp.src = D + k.p; po.hidden = false;
+      pw.srcset = D + k.w + '?v=' + V; pp.src = D + k.p + '?v=' + V; po.hidden = false;
       const mj = document.getElementById('mojing'); if (!mj) return k;
       mj.style.transition = 'none'; mj.classList.remove('on'); void mj.offsetWidth; mj.style.transition = '';   /* 先立刻藏起舊畫面，避免閃白 */
       mj.title = k.title + '動畫';

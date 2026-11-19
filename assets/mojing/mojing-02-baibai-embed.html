@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>墨景 02｜金山夫妻岩</title>
-<!-- MOJING 02 v1.13 · no audio (user decision); embed: wider portrait view, paper fade at the bottom; 極簡 default; soft spray halo (shared MOJING 01 ink module, adapted to the seascape) · shared core follows MOJING 01 (mojing-01-baibai-embed.html) -->
+<!-- MOJING 02 v1.14 · seal 鈺豐→鈺香 (13 strokes 鈺 kept + 10 strokes 香); no audio (user decision); embed: wider portrait view, paper fade at the bottom; 極簡 default; soft spray halo (shared MOJING 01 ink module, adapted to the seascape) · shared core follows MOJING 01 (mojing-01-baibai-embed.html) -->
 <style>
 *{margin:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;background:#ede6d6;color:#1b1a19;font-family:Songti TC,"Noto Serif TC",PMingLiU,serif}
@@ -482,7 +482,7 @@ return fo(vec4f(c,1),vec4f(0,0,-1,dd),vec4f(0,0,select(0.,1.,paper),0));}
 let flame=v.k==2u&&c.r>.9&&c.b<.6;return fo(c,vec4f(0,0,-1,dd),vec4f(0,0,0,select(0.,1.,flame)));}
 @group(1)@binding(0) var tc:texture_2d<f32>;@group(1)@binding(1) var tn:texture_2d<f32>;@group(1)@binding(2) var tw:texture_2d<f32>;@group(1)@binding(3) var tsp:texture_2d<f32>;
 fn pw(a:f32,b:f32,c:f32,t:f32)->f32{return select(mix(a,b,clamp(t,0.,1.)),mix(b,c,clamp(t-1.,0.,1.)),t>1.);}
-const SG=array<vec4f,30>(vec4f(-0.406,-1.698,-0.718,-1.331),vec4f(-0.406,-1.698,-0.094,-1.331),vec4f(-0.624,-1.276,-0.187,-1.276),vec4f(-0.663,-1.019,-0.148,-1.019),vec4f(-0.406,-1.276,-0.406,-0.356),vec4f(-0.585,-0.785,-0.507,-0.629),vec4f(-0.226,-0.785,-0.304,-0.629),vec4f(-0.718,-0.34,-0.094,-0.34),vec4f(0.117,-1.604,0.702,-1.604),vec4f(0.172,-0.996,0.647,-0.996),vec4f(0.078,-0.34,0.741,-0.34),vec4f(0.406,-1.604,0.406,-0.34),vec4f(0.53,-0.707,0.624,-0.551),vec4f(-0.702,0.395,-0.702,0.941),vec4f(-0.702,0.941,0.702,0.941),vec4f(0.702,0.395,0.702,0.941),vec4f(-0.328,0.239,-0.328,0.863),vec4f(0.328,0.239,0.328,0.863),vec4f(-0.53,0.372,-0.125,0.372),vec4f(-0.53,0.59,-0.125,0.59),vec4f(0.125,0.372,0.53,0.372),vec4f(0.125,0.59,0.53,0.59),vec4f(-0.624,1.074,0.624,1.074),vec4f(-0.39,1.198,0.39,1.198),vec4f(-0.39,1.198,-0.39,1.417),vec4f(0.39,1.198,0.39,1.417),vec4f(-0.39,1.417,0.39,1.417),vec4f(-0.273,1.495,-0.172,1.62),vec4f(0.273,1.495,0.172,1.62),vec4f(-0.702,1.698,0.702,1.698));
+const SG=array<vec4f,23>(vec4f(-0.406,-1.698,-0.718,-1.331),vec4f(-0.406,-1.698,-0.094,-1.331),vec4f(-0.624,-1.276,-0.187,-1.276),vec4f(-0.663,-1.019,-0.148,-1.019),vec4f(-0.406,-1.276,-0.406,-0.356),vec4f(-0.585,-0.785,-0.507,-0.629),vec4f(-0.226,-0.785,-0.304,-0.629),vec4f(-0.718,-0.34,-0.094,-0.34),vec4f(0.117,-1.604,0.702,-1.604),vec4f(0.172,-0.996,0.647,-0.996),vec4f(0.078,-0.34,0.741,-0.34),vec4f(0.406,-1.604,0.406,-0.34),vec4f(0.53,-0.707,0.624,-0.551),vec4f(0.3,0.24,-0.26,0.37),vec4f(-0.62,0.53,0.62,0.53),vec4f(0,0.3,0,0.92),vec4f(0,0.6,-0.56,0.9),vec4f(0,0.6,0.56,0.9),vec4f(-0.47,1.12,-0.47,1.698),vec4f(0.47,1.12,0.47,1.698),vec4f(-0.47,1.12,0.47,1.12),vec4f(-0.47,1.41,0.47,1.41),vec4f(-0.47,1.698,0.47,1.698));
 const DSC=.3;                                           // seascape: distances ~3x episode 01, so depth fade is scaled
 fn tone(c:vec3f)->vec3f{var x=c;x=(x*(2.51*x+.03))/(x*(2.43*x+.59)+.14);return pow(clamp(x,vec3f(0.),vec3f(1.)),vec3f(1./2.2));}
 fn tk(uv:vec2f,st:f32)->f32{let c4=textureSampleLevel(tc,smp,uv,0.);let nd=textureSampleLevel(tn,smp,uv,0.);let w=textureSampleLevel(tw,smp,uv,0.);let d=min(nd.w,900.)*DSC;
@@ -531,7 +531,7 @@ let sdk=smoothstep(.99982,.99988,dot(rdv,normalize(u.dv.xyz)))*u.sd.w*(1.-c4.a);
 col=mix(col,mix(vec3f(.80,.36,.15),vec3f(.95,.78,.5),clamp(w.a*1.5-.5,0.,1.)),clamp(w.a,0.,1.)*u.ex.z);
 let sc=vec2f(1.-.06/asp,.58);let sq=(i.uv-sc)*vec2f(asp,1.)/.03;
 if(all(abs(sq)<vec2f(1.,2.))&&u.ik.w<.5){var dm=abs(max(abs(sq.x)-.95,abs(sq.y)-1.95));
-var sgv=SG;for(var j=0;j<30;j++){let S=sgv[j];let pa=sq-S.xy;let ba=S.zw-S.xy;let hh=clamp(dot(pa,ba)/dot(ba,ba),0.,1.);dm=min(dm,length(pa-ba*hh));}
+var sgv=SG;for(var j=0;j<23;j++){let S=sgv[j];let pa=sq-S.xy;let ba=S.zw-S.xy;let hh=clamp(dot(pa,ba)/dot(ba,ba),0.,1.);dm=min(dm,length(pa-ba*hh));}
 let rr=1.-smoothstep(.075,.11,dm+.03*(vn(sq*7.)-.5));col=mix(col,vec3f(.70,.19,.12)*(.92+.08*vn(sq*9.)),rr*(.85+.15*vn(sq*3.)));}
 return vec4f(col,1.);}
 `;
@@ -718,7 +718,7 @@ async function sheet() {
 const s = await shots(), w = 480, h = 300, k = document.createElement("canvas"); k.width = w * 3; k.height = h * 3; const g = k.getContext("2d");
 for (let i = 0; i < 9; i++) { const im = new Image(); im.src = s[i].url; await im.decode(); g.drawImage(im, (i % 3) * w, (i / 3 | 0) * h, w, h);
 g.fillStyle = "#000"; g.font = "14px monospace"; g.fillText(s[i].name, (i % 3) * w + 8, (i / 3 | 0) * h + 20); }
-const url = k.toDataURL("image/png"); window.MOJING.lastSheet = url; dl(url, `mojing-02-v1.13-shots-seed${SEED}.png`); return s;
+const url = k.toDataURL("image/png"); window.MOJING.lastSheet = url; dl(url, `mojing-02-v1.14-shots-seed${SEED}.png`); return s;
 }
 function dl(url, name) { const a = document.createElement("a"); a.href = url; a.download = name; a.click(); }
 window.MOJING = { F, CLK, LT, EMB, camAt, stats, shots, sheet, grab,

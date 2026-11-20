@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://baibai-tw.github.io/sitemap.xml

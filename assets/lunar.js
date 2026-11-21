@@ -15,16 +15,29 @@
     return { y: +p.relatedYear, m: parseInt(p.month, 10), d: +p.day, leap };
   }
 
-  /* 節氣（21 世紀壽星公式，誤差極少） */
+  /* 節氣（21 世紀壽星公式）：一、二月的節氣用 (Y-1)/4，其餘用 Y/4 */
+  const TERM = { lichun:[2,3.87], lixia:[5,5.52], qingming:[4,4.81], liqiu:[8,7.5], lidong:[11,7.438], dongzhi:[12,21.94] };
   function termDate(y, which){
-    const Y = y % 100, C = which === 'qingming' ? 4.81 : 21.94;
-    const day = Math.floor(Y * 0.2422 + C) - Math.floor((Y - 1) / 4);
-    return which === 'qingming' ? utc(y, 4, day) : utc(y, 12, day);
+    const [m, C] = TERM[which], Y = y % 100, L = m <= 2 ? Math.floor((Y - 1) / 4) : Math.floor(Y / 4);
+    return utc(y, m, Math.floor(Y * 0.2422 + C) - L);
+  }
+
+  /* 日干支：1949-10-01 為甲子日（0=甲子） */
+  const A0 = Date.UTC(1949, 9, 1);
+  function dayGZ(date){ return (((Math.round((date.getTime() - A0) / 86400000)) % 60) + 60) % 60; }
+
+  /* 天赦日：春戊寅、夏甲午、秋戊申、冬甲子（四季以立春、立夏、立秋、立冬分界） */
+  function isTianshe(date){
+    const y = date.getUTCFullYear(), t = date.getTime();
+    const need = t >= termDate(y, 'lichun').getTime() && t < termDate(y, 'lixia').getTime() ? 14
+      : t >= termDate(y, 'lixia').getTime() && t < termDate(y, 'liqiu').getTime() ? 30
+      : t >= termDate(y, 'liqiu').getTime() && t < termDate(y, 'lidong').getTime() ? 44 : 0;
+    return dayGZ(date) === need;
   }
 
   function label(l){
     return (l.leap ? '閏' : '') + MN[l.m] + '月' + DN[l.d];
   }
 
-  window.Lunar = { lunarOf, termDate, label, dayName: d => DN[d], monthName: m => MN[m] + '月', utc };
+  window.Lunar = { lunarOf, termDate, isTianshe, dayGZ, label, dayName: d => DN[d], monthName: m => MN[m] + '月', utc };
 })();

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>墨景 02｜金山夫妻岩</title>
-<!-- MOJING 02 v1.14 · seal 鈺豐→鈺香 (13 strokes 鈺 kept + 10 strokes 香); no audio (user decision); embed: wider portrait view, paper fade at the bottom; 極簡 default; soft spray halo (shared MOJING 01 ink module, adapted to the seascape) · shared core follows MOJING 01 (mojing-01-baibai-embed.html) -->
+<!-- MOJING 02 v1.15 · the shore bank stays dry (no water or wave ripples on the near platform); seal 鈺豐→鈺香 (13 strokes 鈺 kept + 10 strokes 香); no audio (user decision); embed: wider portrait view, paper fade at the bottom; 極簡 default; soft spray halo (shared MOJING 01 ink module, adapted to the seascape) · shared core follows MOJING 01 (mojing-01-baibai-embed.html) -->
 <style>
 *{margin:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;background:#ede6d6;color:#1b1a19;font-family:Songti TC,"Noto Serif TC",PMingLiU,serif}
@@ -317,6 +317,7 @@ let asp=u.res.x/u.res.y;let n=.05;let f=4000.;return vec4f(x/(u.res.z*asp),y/u.r
 fn h2(p:vec2f)->f32{return fract(sin(dot(p,vec2f(127.1,311.7)))*43758.5453);}
 fn vn(p:vec2f)->f32{let i=floor(p);let f=fract(p);let s=f*f*(3.-2.*f);return mix(mix(h2(i),h2(i+vec2f(1,0)),s.x),mix(h2(i+vec2f(0,1)),h2(i+vec2f(1,1)),s.x),s.y);}
 fn waveA()->f32{return .04+.22*u.fo.x;}
+fn inBank(q:vec2f)->bool{let t=(q.y-1.6)/2.35;return t>0.&&t<.995&&q.x>mix(-3.4,-1.05,t)&&q.x<mix(3.4,.55,t);}   // shore bank (BANK polygon): above every tide
 fn waveH(q:vec2f)->f32{let T=u.cp.w;var h=0.;
 var dirs=array<vec3f,3>(vec3f(.15,-1.,.55),vec3f(-.35,-.94,.9),vec3f(.4,-.92,1.7));
 for(var i=0;i<3;i++){let d=normalize(dirs[i].xy);let k=dirs[i].z;h+=sin(dot(d,q)*k+T*sqrt(9.8*k)*(.6+.5*u.fo.y))/(1.+f32(i));}
@@ -365,6 +366,7 @@ struct MO{@builtin(position) p:vec4f,@location(0) n:vec3f,@location(1) w:vec3f,@
 if(m>2.5&&m<3.5){P.y=u.lt.w-waveA()*1.1;}o.p=proj(P);o.n=b.xyz;o.w=P;o.m=m;return o;}
 @fragment fn fM(v:MO)->FO{let V=normalize(v.w-u.cp.xyz);let dist=length(v.w-u.cp.xyz);
 if(v.m>3.5){return fo(vec4f(lit(vec3f(0,1,0),vec3f(.16,.20,.20)),1),vec4f(0,1,0,dist),vec4f(0));}       // seabed under the translucent water
+if(v.m>2.5&&inBank(v.w.xz)){discard;}                 // no sea over the bank the viewer stands on
 if(v.m>2.5){                                          // water: swell + chop + surf crests, all read the force
 let T=u.cp.w;let A=.03+.16*u.fo.x;let q=v.w.xz;var dx=0.;var dz=0.;
 var dirs=array<vec3f,3>(vec3f(.15,-1.,.55),vec3f(-.35,-.94,.9),vec3f(.4,-.92,1.7));
@@ -402,7 +404,8 @@ alb*=mix(.85+.3*vn(v.w.xz*6.+v.w.y*3.),.8+.45*smoothstep(.3,.75,brush),u.ik.x);
 let wet=1.-smoothstep(u.lt.w,u.lt.w+.12+.25*u.fo.x,v.w.y);alb*=1.-.35*wet;   // wet band just above the waterline
 let fz=smoothstep(u.lt.w+.02+.12*u.fo.x*(.6+.4*sin(u.cp.w*1.7+v.w.x*3.)),u.lt.w,v.w.y)*step(u.lt.w-.03,v.w.y);
 if(v.m<1.5){alb=mix(alb,vec3f(1.,1.,.98),fz*(.35+.65*u.fo.x)*smoothstep(.3,.6,vn(v.w.xz*9.+u.cp.w)));}
-let wh=waveH(v.w.xz);
+let dry=inBank(v.w.xz)&&v.w.y>.28;                    // bank top: never under a wave (its front face still gets wet)
+let wh=select(waveH(v.w.xz),-9.,dry);
 if(v.m<2.5&&v.w.y<wh){let bodyw=lit(vec3f(0,1,0),vec3f(.10,.18,.22));let rk=lit(normalize(v.n),alb);
 return fo(vec4f(mix(bodyw,rk,.3),1),vec4f(0,1,0,dist),vec4f(1.,.12,0.,0.));}          // under the passing wave: reads as water
 let band=1.-smoothstep(0.,.025+.05*u.fo.x,v.w.y-wh);
@@ -718,7 +721,7 @@ async function sheet() {
 const s = await shots(), w = 480, h = 300, k = document.createElement("canvas"); k.width = w * 3; k.height = h * 3; const g = k.getContext("2d");
 for (let i = 0; i < 9; i++) { const im = new Image(); im.src = s[i].url; await im.decode(); g.drawImage(im, (i % 3) * w, (i / 3 | 0) * h, w, h);
 g.fillStyle = "#000"; g.font = "14px monospace"; g.fillText(s[i].name, (i % 3) * w + 8, (i / 3 | 0) * h + 20); }
-const url = k.toDataURL("image/png"); window.MOJING.lastSheet = url; dl(url, `mojing-02-v1.14-shots-seed${SEED}.png`); return s;
+const url = k.toDataURL("image/png"); window.MOJING.lastSheet = url; dl(url, `mojing-02-v1.15-shots-seed${SEED}.png`); return s;
 }
 function dl(url, name) { const a = document.createElement("a"); a.href = url; a.download = name; a.click(); }
 window.MOJING = { F, CLK, LT, EMB, camAt, stats, shots, sheet, grab,

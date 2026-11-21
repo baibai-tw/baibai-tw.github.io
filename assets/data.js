@@ -62,7 +62,7 @@ days: [
   {rule:'lunar', m:4, d:26, name:'神農大帝聖誕', type:'fest', only:true, roles:['farmer'], roleBig:14, who:'神農大帝（五穀王）', paper:'金紙種類與份量依各家習慣，歡迎到店詢問', extra:'農民祈求五穀豐收、風調雨順'},
   {rule:'lunar', m:5, d:5, name:'端午', slug:'duanwu', type:'fest', big:14, offer:'粽子', who:'神明、祖先', paper:'壽金、刈金、大銀', common:true},
   {rule:'lunar', m:6, d:24, name:'關聖帝君聖誕', type:'fest', only:true, roles:['shop'], who:'關聖帝君（武財神）', paper:'金紙種類與份量依各家習慣，歡迎到店詢問'},
-  {rule:'lunar', m:6, d:24, name:'西秦王爺聖誕', type:'fest', only:true, roles:['perf'], who:'西秦王爺（戲曲之神）', paper:'五色金', extra:'西秦王爺是北管、戲曲與演藝人員的祖師爺，從事表演、直播、內容創作的人也會來拜。金山武英殿（崙仔頂王爺廟，在金山國中旁）主祀西秦王爺，活動日期依廟方公告'},
+  {rule:'lunar', m:6, d:24, name:'西秦王爺聖誕', type:'fest', only:true, roles:['perf'], who:'西秦王爺（戲曲之神）', paper:'五色金', extra:'西秦王爺是北管、戲曲與演藝人員的祖師爺，從事表演、直播、內容創作的人也會來拜。金山武英殿（崙仔頂王爺廟）主祀西秦王爺，隔壁的金山國中是 YouTuber HowHow 的母校，活動日期依廟方公告'},
   {rule:'lunar', m:7, d:1, name:'開鬼門', type:'fest', who:'好兄弟', paper:'小銀、經衣', common:true},
   {rule:'lunar', m:7, d:7, name:'七夕・七娘媽生・拜床母', slug:'qixi', type:'fest', big:14, who:'七娘媽、床母、婆姐', paper:'七娘媽：壽金；床母：婆姐衣、刈金', offer:'七娘媽：麻油雞酒、油飯、胭脂粉餅、圓鏡、梳子、圓仔花、雞冠花；床母：麻油雞或雞腿、油飯', steps:['午後在家門口設桌拜七娘媽','傍晚在孩子的床邊拜床母','香燒一段後燒金紙，燒完就收供品'], extra:'七娘媽和床母都是守護孩子的神明。拜床母民間習慣不用魚、不擺筷子，拜完很快收起供品', more:'家中孩子滿十六歲，可加七娘媽亭、麵線「做十六歲」，金山附近也有廟宇辦理', common:true},
   {rule:'lunar', m:7, d:15, name:'中元普渡・地官大帝誕辰', slug:'zhongyuan', type:'fest', roles:['fisher'], big:30, offer:'鼠麴粿、芋粿、看牲', who:'地官、好兄弟', paper:'拜神用壽金、刈金；普渡用小銀、經衣', extra:'常配鼠麴粿、芋粿、看牲。經衣是否燒給自家祖先，說法不一'},

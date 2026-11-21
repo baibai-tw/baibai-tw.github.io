@@ -44,7 +44,7 @@ window.roleBadge = function(roles, size){
   return (roles || []).map(r => {
     const m = M[r] || (SP[r] && [SP[r].ch, SP[r].name]); if (!m) return '';
     const red = !M[r];
-    return '<svg class="rb" width="' + s + '" height="' + s + '" viewBox="0 0 32 32" role="img" aria-label="' + m[1] + (red ? '' : '專屬') + '"><title>' + m[1] + '</title><circle cx="16" cy="16" r="14.5" fill="#efe2c4" stroke="#8a6a3f" stroke-width="1.4"/><circle cx="16" cy="16" r="11.5" fill="none" stroke="#8a6a3f" stroke-width=".8"/><text x="16" y="21.2" text-anchor="middle" font-size="14" font-weight="700" fill="' + (red ? '#a3392a' : '#1b1916') + '" font-family="serif">' + m[0] + '</text></svg>';
+    return '<svg class="rb" width="' + s + '" height="' + s + '" viewBox="0 0 32 32" role="img" aria-label="' + m[1] + (red ? '' : '專屬') + '"><title>' + m[1] + '</title><circle cx="16" cy="16" r="15" fill="#efe2c4" stroke="#8a6a3f" stroke-width="1.2"/><circle cx="16" cy="16" r="13.2" fill="none" stroke="#8a6a3f" stroke-width=".6"/><text x="16" y="23" text-anchor="middle" font-size="20" font-weight="700" fill="' + (red ? '#a3392a' : '#1b1916') + '" font-family="serif">' + m[0] + '</text></svg>';
   }).join('');
 };
 

@@ -82,11 +82,11 @@ window.moreBlock = function(it, base){
 window.whoCats = function(it){
   const t = (it.who || '') + '｜' + (it.paper || '') + '｜' + (it.name || '');
   const c = [];
-  if (/祖先|祖墳|亡者|往生|掃墓|做七|百日|對年|合爐|撿骨|出殯|致意/.test(t)) c.push('zu');
+  if (/祭祖|祖先|祖墳|亡者|往生|掃墓|做七|百日|對年|合爐|撿骨|出殯|致意/.test(t)) c.push('zu');
   if (/地基主/.test(t)) c.push('di');
   if (/好兄弟|普渡|鬼門|無形/.test(t)) c.push('xd');
   if (/神|土地公|后土|媽祖|天公|玉皇|三界公|財神|帝|王|君|娘|天官|地官|水官|月下|大眾爺|床母|婆姐|壽金|福金|四色金|五色金|三色金|犒軍/.test(t)) c.push('shen');
-  return c.join(' ');
+  return c.length ? c.join(' ') : 'shen zu di xd';
 };
 window.WHO = [['', '全部'], ['shen', '拜神明'], ['zu', '拜祖先'], ['di', '地基主'], ['xd', '好兄弟']];
 

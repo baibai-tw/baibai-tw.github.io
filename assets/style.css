@@ -35,7 +35,7 @@ section>h2::before{content:"";width:6px;height:22px;background:var(--red);border
 .chip{display:inline-block;padding:2px 10px;margin:2px 4px 2px 0;border-radius:999px;background:#f1e3c2;color:#6b4d12;font-size:14px;text-decoration:none;border:1px solid #e1cc98}
 .chip:hover{background:#ead6a6}
 .muted{color:var(--mute);font-size:14px}
-.star{color:var(--red);font-weight:700}
+.star{display:inline-block;padding:0 6px;border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:400;color:var(--ink-2);vertical-align:.15em;font-family:var(--sans,inherit)}
 dl.kv{margin:8px 0 0;display:grid;grid-template-columns:4.2em 1fr;gap:4px 8px;font-size:15px}
 dl.kv dt{color:var(--mute)}
 dl.kv dd{margin:0}
@@ -43,7 +43,7 @@ dl.kv dd{margin:0}
 .fire svg{flex:none;margin-top:3px}
 
 /* 圖示 */
-.ico{width:34px;height:34px;flex:none}
+.ico{width:34px;height:34px;flex:none;color:var(--ink)}
 .occ-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
 .occ-head h3{margin:0;font-size:18px}
 
@@ -54,7 +54,7 @@ dl.kv dd{margin:0}
 button{font:inherit;cursor:pointer}
 .btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 12px}
 .btn:hover{background:var(--paper-2)}
-.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .cal .wd{text-align:center;font-size:13px;color:var(--mute);padding:4px 0}
 .cal .day{position:relative;min-height:66px;border-radius:8px;background:var(--card);border:1px solid var(--line);padding:4px 3px 3px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1px;color:inherit}
 .cal .day.out{visibility:hidden}
@@ -133,9 +133,8 @@ footer a{color:var(--ink-2)}
 .roles{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
 .roles button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:14px}
 .roles button[aria-pressed=true]{background:var(--red);color:#fbeee6;border-color:var(--red)}
-.rb{display:inline-grid;place-items:center;width:1.45em;height:1.45em;margin:0 2px 0 0;border-radius:4px;font-size:.72em;font-family:var(--serif);font-weight:700;color:#fff;vertical-align:.12em;line-height:1;letter-spacing:0}
-.rb-fisher{background:#2f6f86}.rb-farmer{background:#5a7d2c}.rb-shop{background:#b07a1f}.rb-factory{background:#5e5a52}
-.cal .day .ev .rb,.week .e .rb{font-size:9px;width:13px;height:13px;vertical-align:0}
+.rb{display:inline-block;vertical-align:-.3em;margin:0 1px}
+.cal .day .ev .rb,.week .e .rb{vertical-align:-2px;margin-right:1px}
 .shopnote{margin-top:10px;padding:8px 10px;border-radius:8px;background:#f6efe0;border:1px dashed #d3b98a;color:#5b4720;font-size:14px;display:flex;gap:8px;align-items:flex-start}
 .shopnote .seal{flex:none;width:22px;height:22px;font-size:12px}
 details.cat{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:0 0 12px;scroll-margin-top:70px}
@@ -147,3 +146,38 @@ details.cat .chev{font-size:22px;color:var(--mute);transition:transform .2s}
 details.cat[open] .chev{transform:rotate(90deg)}
 details.cat>.grid{padding:0 12px 14px}
 details.cat .card{background:var(--paper)}
+
+/* 2026-11 改版：鞭炮文字提醒、拜的順序、各地說法、地區說明、依對象快捷 */
+.fire-l{flex:none;font-size:12px;padding:1px 6px;border:1px solid #c98b7e;border-radius:4px;color:#7a2a1d;margin-top:1px}
+.steps{margin:6px 0 10px;padding-left:1.4em;line-height:1.8}
+.steps li::marker{color:var(--red);font-weight:700}
+details.more{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+details.more>summary{cursor:pointer;font-size:14px;color:var(--red);list-style:none}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:'＋ ';}
+details.more[open]>summary::before{content:'－ ';}
+details.more p{margin:6px 0 0;font-size:14px;line-height:1.75;color:var(--ink-2)}
+.ref-l{display:inline-block;font-size:11px;padding:0 6px;margin-right:6px;border:1px solid var(--line);border-radius:4px;color:var(--mute)}
+.region-note{margin:0 0 10px;font-size:13px;color:var(--mute);line-height:1.7}
+.who-bar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.who{font:inherit;font-size:14px;padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink-2);text-decoration:none;cursor:pointer}
+.who.on{border-color:var(--red);color:var(--red)}
+main[data-filter="shen"] [data-who]:not([data-who~="shen"]),
+main[data-filter="zu"] [data-who]:not([data-who~="zu"]),
+main[data-filter="di"] [data-who]:not([data-who~="di"]),
+main[data-filter="xd"] [data-who]:not([data-who~="xd"]){display:none}
+.occ-head h4 a{color:inherit;text-decoration:none;border-bottom:1px solid var(--red)}
+.cc-name a,.big-list b a{color:inherit;text-decoration:none;border-bottom:1px solid var(--red)}
+/* 大節日獨立頁 */
+.fest-hero{position:relative;aspect-ratio:3/4;max-height:72vh;width:100%;overflow:hidden;background:#e6dfd0;border-radius:0 0 16px 16px}
+@media (orientation:landscape) and (min-width:700px){.fest-hero{aspect-ratio:16/10;max-height:70vh}}
+.fest-hero .fh-img img,.fest-hero .fh-anim{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0}
+.fest-hero .fh-anim{opacity:0;transition:opacity 1.2s;pointer-events:none}
+.fest-hero .fh-anim.on{opacity:1}
+.fest-hero .fh-name{position:absolute;left:18px;top:18px;writing-mode:vertical-rl;font-family:var(--serif);font-size:clamp(34px,8vw,64px);font-weight:700;letter-spacing:.2em;color:var(--ink)}
+.fest-main{max-width:720px}
+.fest-main h1{margin:20px 0 4px}
+.fest-date{margin:0 0 16px;color:var(--ink-2)}
+.fest-cd{margin-left:10px;color:var(--red)}
+.fest-main section{margin:0 0 18px}
+.fest-main section h2{font-size:15px;letter-spacing:.2em;color:var(--red);margin:0 0 6px}

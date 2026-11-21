@@ -62,6 +62,7 @@ days: [
   {rule:'lunar', m:4, d:26, name:'神農大帝聖誕', type:'fest', only:true, roles:['farmer'], roleBig:14, who:'神農大帝（五穀王）', paper:'金紙種類與份量依各家習慣，歡迎到店詢問', extra:'農民祈求五穀豐收、風調雨順'},
   {rule:'lunar', m:5, d:5, name:'端午', slug:'duanwu', type:'fest', big:14, offer:'粽子', who:'神明、祖先', paper:'壽金、刈金、大銀', common:true},
   {rule:'lunar', m:6, d:24, name:'關聖帝君聖誕', type:'fest', only:true, roles:['shop'], who:'關聖帝君（武財神）', paper:'金紙種類與份量依各家習慣，歡迎到店詢問'},
+  {rule:'lunar', m:6, d:24, name:'西秦王爺聖誕', type:'fest', only:true, roles:['perf'], who:'西秦王爺（戲曲之神）', paper:'金紙種類與份量依各家習慣，歡迎到店詢問', extra:'西秦王爺是北管、戲曲與演藝人員的祖師爺，從事表演、直播、網紅工作的人也會來拜。金山武英殿（崙仔頂王爺廟）主祀西秦王爺，活動日期依廟方公告'},
   {rule:'lunar', m:7, d:1, name:'開鬼門', type:'fest', who:'好兄弟', paper:'小銀、經衣', common:true},
   {rule:'lunar', m:7, d:7, name:'七娘媽生・拜床母', type:'fest', who:'七娘媽、床母、婆姐', paper:'床母金、婆姐衣、刈金', extra:'七夕傍晚拜床母，祈求家中小孩好帶、夜裡安穩', common:true},
   {rule:'lunar', m:7, d:15, name:'中元普渡・地官大帝誕辰', slug:'zhongyuan', type:'fest', roles:['fisher'], big:30, offer:'鼠麴粿、芋粿、看牲', who:'地官、好兄弟', paper:'拜神用壽金、刈金；普渡用小銀、經衣', extra:'常配鼠麴粿、芋粿、看牲。經衣是否燒給自家祖先，說法不一'},
@@ -115,7 +116,8 @@ occasions: [
 
 regionNote: '本站以北台灣常見禮俗為主，各家習慣不同，依家中慣例即可。點「各地說法」可看其他地區的名稱與做法（標「參考」）。',
 
-roles: {home:'一般家庭', fisher:'討海人（漁民）', farmer:'作穡人（農民）', shop:'做生意（商家）', factory:'工廠'},
+roles: {home:'一般家庭', fisher:'討海人（漁民）', farmer:'作穡人（農民）', shop:'做生意（商家）', factory:'工廠', perf:'演藝・網紅'},
+roleSpecial: {perf:{ch:'演', name:'演藝・網紅'}},
 
 temples: [
   {id:'mazu', name:'媽祖廟', who:'媽祖（天上聖母）', paper:'四色金：大壽金、三童金、刈金、福金', offer:'紅湯圓、麵線、發糕、紅龜粿、鮮花（成對，不用假花）、清茶三杯', extra:'農曆三月廿三媽祖生'},
@@ -126,6 +128,7 @@ temples: [
 ],
 nearby: [
   ['金山廣安宮', 0.1, '開漳聖王', '', 'ChIJO1sDwldLXTQRyMx8yHTU55g'],
+  ['金山武英殿', 0.2, '西秦王爺（戲曲之神）', '', 'ChIJ_Ze24lZLXTQROQMWC_xIxIc'],
   ['金包里慈護宮', 0.4, '媽祖', 'mazu', 'ChIJ_xrGQ12zQjQRvRtteX0gvR0'],
   ['福德宮（民生路）', 0.8, '土地公', 'tudi', 'ChIJgy6hhy5LXTQR06eawE8ZZME'],
   ['金山承天宮', 0.8, '國姓爺（鄭成功）', '', 'ChIJ1w0I8FtLXTQRsiTf3hw7f6o'],

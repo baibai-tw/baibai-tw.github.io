@@ -5,7 +5,7 @@ import http.server, threading, functools, re, pathlib
 from playwright.sync_api import sync_playwright
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-FEST = ['chunjie', 'tiangong', 'qingming', 'duanwu', 'zhongyuan', 'zhongqiu', 'dongzhi', 'weiya', 'chuxi']
+FEST = ['chunjie', 'tiangong', 'qingming', 'duanwu', 'qixi', 'zhongyuan', 'zhongqiu', 'dongzhi', 'weiya', 'chuxi']
 PAGES = ['jieri', 'hunsang', 'miaoyu', 'mingcheng'] + ['jieri/' + f for f in FEST]
 MARK = '<!-- prerendered: 內容由 tools/prerender.py 產生，資料改了要重跑 -->'
 

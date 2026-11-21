@@ -21,7 +21,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="/assets/style.css?v=20261121c">
+<link rel="stylesheet" href="/assets/style.css?v=20261121i">
 <style>
   html,body{height:100%}
   body{margin:0;overflow:hidden;display:grid;grid-template-rows:60% 40%;height:100dvh;background:var(--paper)}
@@ -44,6 +44,7 @@
   .sub{margin:2px 0 -2px;font-family:var(--serif);font-size:15px;letter-spacing:.3em;color:var(--ink-2);text-align:center}
   .shopline{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 4px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-family:var(--serif);font-size:14px;letter-spacing:.12em;color:var(--ink-2);text-align:center}
   .kvseals{display:inline-flex;gap:4px;flex:none}
+  .shopline .seal.on.night{background:#1b1916;color:#f0c9a8;border-color:#1b1916}
   .shopline .seal{width:22px;height:22px;font-size:12px;flex:none;padding:0;cursor:pointer;font-family:var(--serif);transition:transform .2s;background:transparent;color:var(--red);border:1.4px solid var(--red);box-sizing:border-box}
   .shopline .seal.on{background:var(--red);color:#fbeee6}
   .shopline .seal:hover,.shopline .seal:focus-visible{transform:scale(1.15)}
@@ -89,25 +90,27 @@
   <script>
   /* 首頁主視覺：多套墨景，進首頁隨機抽一套；店名條上每套一顆印（ch），點印切換。新增一套就在 MJ 加一行 */
   window.KV = (function(){
-    const V = '20261121c', D = '/assets/mojing/';
+    const V = '20261121i', D = '/assets/mojing/';
     const MJ = [
       { f: 'mojing-01-baibai-embed.html', q: '&walk=1', ch: '竹', title: '墨竹香塔', p: 'cover-3x4.webp', w: 'cover-16x10.webp' },
       { f: 'mojing-02-baibai-embed.html', q: '', ch: '海', title: '金山夫妻岩', p: 'mojing-02-cover-3x4.webp', w: 'mojing-02-cover-16x10.webp' }
     ];
     const po = document.getElementById('poster'), pw = document.getElementById('poster-w'), pp = document.getElementById('poster-p');
-    let i = Math.random() * MJ.length | 0, gpuOk = true;
+    let i = Math.random() * MJ.length | 0, gpuOk = true, tod = null;   /* tod：null 跟著現在時間；'day' / 'night' 由連按兩下印章切換 */
+    const isNight = () => tod ? tod === 'night' : (h => h < 6 || h >= 18)(new Date().getHours());
     function show(n){
       i = (n + MJ.length) % MJ.length; const k = MJ[i];
       pw.srcset = D + k.w + '?v=' + V; pp.src = D + k.p + '?v=' + V; po.hidden = false;
       const mj = document.getElementById('mojing'); if (!mj) return k;
       mj.style.transition = 'none'; mj.classList.remove('on'); void mj.offsetWidth; mj.style.transition = '';   /* 先立刻藏起舊畫面，避免閃白 */
       mj.title = k.title + '動畫';
-      if (gpuOk) mj.src = D + k.f + '?embed=1' + k.q + '&v=' + V;
-      document.querySelectorAll('.kvseal').forEach(b => { const on = +b.dataset.i === i; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+      if (gpuOk) mj.src = D + k.f + '?embed=1' + (tod ? '&t=' + (tod === 'night' ? '21:00' : '12:00') : k.q) + '&v=' + V;
+      document.querySelectorAll('.kvseal').forEach(b => { const on = +b.dataset.i === i; b.classList.toggle('on', on); b.classList.toggle('night', on && isNight()); b.setAttribute('aria-pressed', on); });
       return k;
     }
     show(i);
-    return { MJ, show, cur(){ return i; }, next(){ return show(i + 1); }, off(){ gpuOk = false; } };
+    function flip(){ tod = isNight() ? 'day' : 'night'; return show(i); }
+    return { MJ, show, flip, cur(){ return i; }, next(){ return show(i + 1); }, off(){ gpuOk = false; } };
   })();
   </script>
   <div class="todayv" id="today"></div>
@@ -128,18 +131,24 @@
   <p class="lead">祭祀，是思念的延續。金紙不在多，心意最重要。</p>
 </main>
 
-<script src="/assets/data.js?v=20261121c"></script>
-<script src="/assets/lunar.js?v=20261121c"></script>
-<script src="/assets/common.js?v=20261121c"></script>
+<script src="/assets/data.js?v=20261121i"></script>
+<script src="/assets/lunar.js?v=20261121i"></script>
+<script src="/assets/common.js?v=20261121i"></script>
 <script>
 
 /* 靜態水墨佔位圖：之後換成動態主視覺（WebGPU），不支援的裝置仍顯示這張 */
 (function(){
   const mj = document.getElementById('mojing');
   const ks = document.getElementById('kvseals');
-  ks.innerHTML = KV.MJ.map((k, n) => '<button type="button" class="seal kvseal" data-i="' + n + '" aria-label="主視覺：' + k.title + '" title="' + k.title + '">' + k.ch + '</button>').join('');
-  ks.querySelectorAll('.kvseal').forEach(b => b.onclick = () => KV.show(+b.dataset.i));
-  ks.querySelectorAll('.kvseal').forEach(b => { const on = +b.dataset.i === KV.cur(); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  ks.innerHTML = KV.MJ.map((k, n) => '<button type="button" class="seal kvseal" data-i="' + n + '" aria-label="主視覺：' + k.title + '（連按兩下切換白天／夜晚）" title="' + k.title + '・連按兩下切換日／夜">' + k.ch + '</button>').join('');
+  /* 點別顆印：換主視覺；同一顆印 0.4 秒內連按兩下：切換白天／夜晚 */
+  let lastT = 0, lastI = -1;
+  ks.querySelectorAll('.kvseal').forEach(b => b.onclick = () => {
+    const n = +b.dataset.i, now = Date.now(), dbl = n === lastI && now - lastT < 400;
+    lastT = dbl ? 0 : now; lastI = n;
+    if (dbl) KV.flip(); else if (n !== KV.cur()) KV.show(n);
+  });
+  KV.show(KV.cur());
   addEventListener('message', e => {
     if (e.source !== mj.contentWindow || !e.data) return;
     if (e.data.mojing === 'ready') mj.classList.add('on');
@@ -173,7 +182,7 @@
     const dt = new Date(today.getTime() + i * DAY), { l, ev } = eventsOn(dt);
     const fest = ev.find(e => e.type !== 'daily'), daily = ev.find(e => e.type === 'daily');
     const top = l.d === 1 ? (l.leap ? '閏' : '') + L.monthName(l.m) : L.dayName(l.d);
-    w += '<a href="/jieri/" class="' + (i === 0 ? 'today' : fest ? 'has' : '') + '" aria-label="' + md(dt) + ' 農曆' + L.label(l) + (ev.length ? '，' + ev.map(e => e.name).join('、') : '') + '"><span class="w">' + (i === 0 ? '今天' : WD[dt.getUTCDay()]) + '</span><span class="l">' + top + '</span><span class="s">' + (dt.getUTCMonth() + 1) + '/' + dt.getUTCDate() + '</span>' + ((fest || daily) ? '<span class="e">' + ((fest || daily).only ? roleBadge((fest || daily).roles.slice(0, 1), 16) : '') + (fest || daily).name.split(/[・（、]/)[0] + '</span>' : '') + '</a>';
+    w += '<a href="/jieri/" class="' + (i === 0 ? 'today' : fest ? 'has' : '') + '" aria-label="' + md(dt) + ' 農曆' + L.label(l) + (ev.length ? '，' + ev.map(e => e.name).join('、') : '') + '"><span class="w">' + (i === 0 ? '今天' : WD[dt.getUTCDay()]) + '</span><span class="l">' + top + '</span><span class="s">' + (dt.getUTCMonth() + 1) + '/' + dt.getUTCDate() + '</span>' + ((fest || daily) ? '<span class="e">' + ((fest || daily).only ? roleBadge((fest || daily).roles.slice(0, 1), 18) : '') + (fest || daily).name.split(/[・（、]/)[0] + '</span>' : '') + '</a>';
   }
   document.getElementById('week').innerHTML = w;
   for (let i = 0; i < 400; i++){

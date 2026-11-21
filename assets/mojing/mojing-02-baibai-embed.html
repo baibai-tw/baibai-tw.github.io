@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>墨景 02｜金山夫妻岩</title>
-<!-- MOJING 02 v1.15 · the shore bank stays dry (no water or wave ripples on the near platform); seal 鈺豐→鈺香 (13 strokes 鈺 kept + 10 strokes 香); no audio (user decision); embed: wider portrait view, paper fade at the bottom; 極簡 default; soft spray halo (shared MOJING 01 ink module, adapted to the seascape) · shared core follows MOJING 01 (mojing-01-baibai-embed.html) -->
+<!-- MOJING 02 v1.17 · seal group A (海 + 謝鈺豐 + 香, irregular ovals); gulls more active; seal 香 strokes identical to MOJING 01; the shore bank stays dry (no water or wave ripples on the near platform); seal 鈺豐→鈺香 (13 strokes 鈺 kept + 10 strokes 香); no audio (user decision); embed: wider portrait view, paper fade at the bottom; 極簡 default; soft spray halo (shared MOJING 01 ink module, adapted to the seascape) · shared core follows MOJING 01 (mojing-01-baibai-embed.html) -->
 <style>
 *{margin:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;background:#ede6d6;color:#1b1a19;font-family:Songti TC,"Noto Serif TC",PMingLiU,serif}
@@ -282,7 +282,7 @@ CRAB.edge = { segs, L, cx: best.cx, cz: best.cz }; CRAB.len = tot;
 function crabAt(u) { const E = CRAB.edge; let d = u * CRAB.len; for (let i = 0; i < 2; i++) { if (d <= E.L[i] || i == 1) { const [a, b] = E.segs[i], t = Math.min(1, d / E.L[i]);
 const x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t, ox = x - E.cx, oz = z - E.cz, o = Math.hypot(ox, oz) || 1; return [x + ox / o * .03, z + oz / o * .03]; } d -= E.L[i]; } }
 const GPER = [[192, 48], [210, 49], [232, 50], [255, 51], [281, 52], [320, 54], [344, 56], [588, 77], [600, 77], [614, 77], [625, 78], [638, 79], [178, 124], [190, 125], [370, 133], [560, 163], [566, 162], [386, 196], [700, 300], [745, 288], [760, 290], [62, 236]].map(([x, y]) => [SX + (x - 44) * SU, (397 - y) * SU + .4, SZ - 2]);
-const GULL = GPER.map((p, i) => ({ fly: 0, t: 0, next: 5 + RD() * 60, ph: RD() * 6.28, r: 25 + RD() * 45, h: 30 + RD() * 50, cx: -41 + (RD() - .5) * 60, w: (.25 + RD() * .2) * (RD() < .5 ? -1 : 1) }));
+const GULL = GPER.map((p, i) => ({ fly: 0, t: 0, next: 2 + RD() * 18, ph: RD() * 6.28, r: 25 + RD() * 45, h: 30 + RD() * 50, cx: -41 + (RD() - .5) * 60, w: (.25 + RD() * .2) * (RD() < .5 ? -1 : 1) }));
 function lifeUpd(dt, t) {
 if (!CRAB.edge) crabSetup();
 const wl = WLA + CLK.tide * WLB, low = GPER, night = LT.night > .5;
@@ -298,8 +298,8 @@ CRAB.c.forEach((c, i) => { const [x, z] = crabAt(c.u); AN.set([x, .06 + c.size *
 const kiteNear = DY.kiteOn ? 1 : 0;
 GULL.forEach((g, i) => { g.t += dt; const p = low[i];
 if (!g.fly && !night && g.t > g.next) { g.fly = 1; g.t = 0; g.dur = 15 + RD() * 40; }
-if (!g.fly && !night && (RD() < dt * (.004 + F.v * .03 + kiteNear * .04 + (F.lv >= 2 && p[1] < 12 ? .05 : 0)))) { g.fly = 1; g.t = 0; g.dur = 10 + RD() * 25; }
-if (g.fly && (g.t > g.dur || night)) { g.fly = 0; g.t = 0; g.next = 20 + RD() * 120; }
+if (!g.fly && !night && (RD() < dt * (.015 + F.v * .04 + kiteNear * .04 + (F.lv >= 2 && p[1] < 12 ? .05 : 0)))) { g.fly = 1; g.t = 0; g.dur = 10 + RD() * 25; GULL.forEach(o => { if (!o.fly && RD() < .3) o.next = o.t + .4 + RD() * 3; }); }   // a few neighbours follow
+if (g.fly && (g.t > g.dur || night)) { g.fly = 0; g.t = 0; g.next = 6 + RD() * 35; }
 if (g.fly) { const a = g.ph + g.t * g.w * (1 + F.v * .6), wob = F.v * 6 * Math.sin(g.t * 1.7 + i);
 const k = Math.min(1, g.t / 1.5, (g.dur - g.t) / 1.5);                   // fade in / out: never drawn crossing the rock
 const fx = g.cx + Math.cos(a) * (g.r + 70), fy = 72 + g.h * .6 + Math.sin(g.t * .9 + i) * 4 + wob * .3, fz = SZ - 40 + Math.sin(a) * g.r * .5;
@@ -485,7 +485,16 @@ return fo(vec4f(c,1),vec4f(0,0,-1,dd),vec4f(0,0,select(0.,1.,paper),0));}
 let flame=v.k==2u&&c.r>.9&&c.b<.6;return fo(c,vec4f(0,0,-1,dd),vec4f(0,0,0,select(0.,1.,flame)));}
 @group(1)@binding(0) var tc:texture_2d<f32>;@group(1)@binding(1) var tn:texture_2d<f32>;@group(1)@binding(2) var tw:texture_2d<f32>;@group(1)@binding(3) var tsp:texture_2d<f32>;
 fn pw(a:f32,b:f32,c:f32,t:f32)->f32{return select(mix(a,b,clamp(t,0.,1.)),mix(b,c,clamp(t-1.,0.,1.)),t>1.);}
-const SG=array<vec4f,23>(vec4f(-0.406,-1.698,-0.718,-1.331),vec4f(-0.406,-1.698,-0.094,-1.331),vec4f(-0.624,-1.276,-0.187,-1.276),vec4f(-0.663,-1.019,-0.148,-1.019),vec4f(-0.406,-1.276,-0.406,-0.356),vec4f(-0.585,-0.785,-0.507,-0.629),vec4f(-0.226,-0.785,-0.304,-0.629),vec4f(-0.718,-0.34,-0.094,-0.34),vec4f(0.117,-1.604,0.702,-1.604),vec4f(0.172,-0.996,0.647,-0.996),vec4f(0.078,-0.34,0.741,-0.34),vec4f(0.406,-1.604,0.406,-0.34),vec4f(0.53,-0.707,0.624,-0.551),vec4f(0.3,0.24,-0.26,0.37),vec4f(-0.62,0.53,0.62,0.53),vec4f(0,0.3,0,0.92),vec4f(0,0.6,-0.56,0.9),vec4f(0,0.6,0.56,0.9),vec4f(-0.47,1.12,-0.47,1.698),vec4f(0.47,1.12,0.47,1.698),vec4f(-0.47,1.12,0.47,1.12),vec4f(-0.47,1.41,0.47,1.41),vec4f(-0.47,1.698,0.47,1.698));
+const GS=array<vec4f,74>(vec4f(-0.55,-0.68,-0.48,-0.58),vec4f(-0.72,-0.48,-0.36,-0.48),vec4f(-0.66,-0.3,-0.42,-0.3),vec4f(-0.66,-0.14,-0.42,-0.14),vec4f(-0.68,0.04,-0.68,0.44),vec4f(-0.4,0.04,-0.4,0.44),vec4f(-0.68,0.04,-0.4,0.04),vec4f(-0.68,0.44,-0.4,0.44),vec4f(0.02,-0.68,-0.08,-0.56),vec4f(-0.2,-0.52,-0.2,0.22),vec4f(0.18,-0.52,0.18,0.62),vec4f(-0.2,-0.52,0.18,-0.52),vec4f(-0.2,-0.28,0.18,-0.28),vec4f(-0.2,-0.04,0.18,-0.04),vec4f(-0.28,0.3,0.24,0.1),vec4f(0.04,0.22,-0.26,0.6),vec4f(0.18,0.62,0.08,0.54),vec4f(0.3,-0.3,0.76,-0.3),vec4f(0.6,-0.68,0.6,0.62),vec4f(0.6,0.62,0.48,0.54),vec4f(0.4,-0.06,0.48,0.08),vec4f(-0.406,-0.679,-0.718,-0.312),vec4f(-0.406,-0.679,-0.094,-0.312),vec4f(-0.624,-0.257,-0.187,-0.257),vec4f(-0.663,0,-0.148,0),vec4f(-0.406,-0.257,-0.406,0.663),vec4f(-0.585,0.234,-0.507,0.39),vec4f(-0.226,0.234,-0.304,0.39),vec4f(-0.718,0.679,-0.094,0.679),vec4f(0.117,-0.585,0.702,-0.585),vec4f(0.172,0.023,0.647,0.023),vec4f(0.078,0.679,0.741,0.679),vec4f(0.406,-0.585,0.406,0.679),vec4f(0.53,0.312,0.624,0.468),vec4f(-0.702,-0.574,-0.702,-0.028),vec4f(-0.702,-0.028,0.702,-0.028),vec4f(0.702,-0.574,0.702,-0.028),vec4f(-0.328,-0.73,-0.328,-0.106),vec4f(0.328,-0.73,0.328,-0.106),vec4f(-0.53,-0.597,-0.125,-0.597),vec4f(-0.53,-0.379,-0.125,-0.379),vec4f(0.125,-0.597,0.53,-0.597),vec4f(0.125,-0.379,0.53,-0.379),vec4f(-0.624,0.105,0.624,0.105),vec4f(-0.39,0.229,0.39,0.229),vec4f(-0.39,0.229,-0.39,0.448),vec4f(0.39,0.229,0.39,0.448),vec4f(-0.39,0.448,0.39,0.448),vec4f(-0.273,0.526,-0.172,0.651),vec4f(0.273,0.526,0.172,0.651),vec4f(-0.702,0.729,0.702,0.729),vec4f(-0.351,-0.624,0.312,-0.718),vec4f(-0.663,-0.468,0.663,-0.468),vec4f(0,-0.718,0,-0.062),vec4f(0,-0.39,-0.585,-0.094),vec4f(0,-0.39,0.585,-0.094),vec4f(-0.484,0.078,0.484,0.078),vec4f(-0.484,0.718,0.484,0.718),vec4f(-0.484,0.078,-0.484,0.718),vec4f(0.484,0.078,0.484,0.718),vec4f(-0.484,0.39,0.484,0.39),vec4f(-0.64,-0.62,-0.52,-0.5),vec4f(-0.68,-0.22,-0.56,-0.1),vec4f(-0.7,0.62,-0.5,0.2),vec4f(0.02,-0.68,-0.2,-0.4),vec4f(-0.1,-0.52,0.64,-0.52),vec4f(-0.22,-0.3,-0.22,0.4),vec4f(-0.22,-0.3,0.54,-0.3),vec4f(0.54,-0.3,0.54,0.62),vec4f(0.54,0.62,0.42,0.56),vec4f(-0.36,0.08,0.72,0.08),vec4f(-0.22,0.4,0.54,0.4),vec4f(0.12,-0.2,0.18,-0.04),vec4f(0.12,0.18,0.18,0.3));
+fn gsd(q:vec2f,a:u32,n:u32)->f32{var d=9.;var gs=GS;for(var j=a;j<a+n;j++){let S=gs[j];let pa=q-S.xy;let ba=S.zw-S.xy;let hh=clamp(dot(pa,ba)/dot(ba,ba),0.,1.);d=min(d,length(pa-ba*hh));}return d;}
+fn sealC(q:vec2f,ab:vec2f,sd:f32,d:f32,sw:f32,zhu:f32,aa:f32)->f32{
+let e=q/ab;let r=length(e);let th=atan2(e.y,e.x);
+let wob=1.+.035*sin(3.*th+sd)+.025*sin(5.*th+2.*sd)+.02*sin(9.*th+.7)+.025*(vn(q*2.2+sd)-.5)-step(.82,vn(q*7.+sd*3.))*.025;
+let ins=1.-smoothstep(wob-aa,wob+aa,r);
+let st=1.-smoothstep(sw-aa,sw+aa,d+(vn(q*13.+sd)-.5)*.016);
+var c=ins*(1.-st);
+if(zhu>.5){let rim=smoothstep(wob-.14/max(ab.x,ab.y)-aa,wob-.14/max(ab.x,ab.y)+aa,r);c=ins*max(rim,st);}
+return c*(1.-step(.86,vn(q*30.+sd))*step(.55,vn(q*2.5+sd)));}
 const DSC=.3;                                           // seascape: distances ~3x episode 01, so depth fade is scaled
 fn tone(c:vec3f)->vec3f{var x=c;x=(x*(2.51*x+.03))/(x*(2.43*x+.59)+.14);return pow(clamp(x,vec3f(0.),vec3f(1.)),vec3f(1./2.2));}
 fn tk(uv:vec2f,st:f32)->f32{let c4=textureSampleLevel(tc,smp,uv,0.);let nd=textureSampleLevel(tn,smp,uv,0.);let w=textureSampleLevel(tw,smp,uv,0.);let d=min(nd.w,900.)*DSC;
@@ -532,10 +541,13 @@ col=mix(col,pap*1.03,clamp(w.b,0.,1.)*mix(.5,1.,nf));
 let mdk=smoothstep(.99962,.99975,dot(rdv,normalize(u.mv.xyz)))*step(.5,u.mv.w)*(1.-c4.a);col=mix(col,pap*1.04,mdk);
 let sdk=smoothstep(.99982,.99988,dot(rdv,normalize(u.dv.xyz)))*u.sd.w*(1.-c4.a);col=mix(col,vec3f(.74,.22,.13),sdk);
 col=mix(col,mix(vec3f(.80,.36,.15),vec3f(.95,.78,.5),clamp(w.a*1.5-.5,0.,1.)),clamp(w.a,0.,1.)*u.ex.z);
-let sc=vec2f(1.-.06/asp,.58);let sq=(i.uv-sc)*vec2f(asp,1.)/.03;
-if(all(abs(sq)<vec2f(1.,2.))&&u.ik.w<.5){var dm=abs(max(abs(sq.x)-.95,abs(sq.y)-1.95));
-var sgv=SG;for(var j=0;j<23;j++){let S=sgv[j];let pa=sq-S.xy;let ba=S.zw-S.xy;let hh=clamp(dot(pa,ba)/dot(ba,ba),0.,1.);dm=min(dm,length(pa-ba*hh));}
-let rr=1.-smoothstep(.075,.11,dm+.03*(vn(sq*7.)-.5));col=mix(col,vec3f(.70,.19,.12)*(.92+.08*vn(sq*9.)),rr*(.85+.15*vn(sq*3.)));}
+if(u.ik.w<.5){let P=vec2f(i.uv.x*asp,i.uv.y);let gx=asp-.03*asp-.0565;
+let k=.74;var cov=0.;
+{let s=.0625;let q=(P-vec2f(gx,.545))/s;cov=max(cov,sealC(q,vec2f(.86,1.18),53.,gsd(q/.86,61u,13u)*.86,.075,0.,px.y/s*1.5));}
+{let s=.0279;let q=(P-vec2f(gx-.025,.70))/s;let d=min(min(gsd((q-vec2f(0.,-1.22))/k,0u,21u),gsd(q/k,21u,13u)),gsd((q-vec2f(0.,1.22))/k,34u,17u))*k;
+cov=max(cov,sealC(q,vec2f(.98,2.12),21.,d,.062,0.,px.y/s*1.5));}
+{let s=.0258;let q=(P-vec2f(gx+.031,.70))/s;cov=max(cov,sealC(q,vec2f(.86,1.18),51.,gsd(q/.86,51u,10u)*.86,.082,1.,px.y/s*1.5));}
+col=mix(col,vec3f(.69,.17,.11)*(.93+.1*vn(P*40.)),cov*.92);}
 return vec4f(col,1.);}
 `;
 const cv = $("#c"), Ub = new Float32Array(68);
@@ -721,7 +733,7 @@ async function sheet() {
 const s = await shots(), w = 480, h = 300, k = document.createElement("canvas"); k.width = w * 3; k.height = h * 3; const g = k.getContext("2d");
 for (let i = 0; i < 9; i++) { const im = new Image(); im.src = s[i].url; await im.decode(); g.drawImage(im, (i % 3) * w, (i / 3 | 0) * h, w, h);
 g.fillStyle = "#000"; g.font = "14px monospace"; g.fillText(s[i].name, (i % 3) * w + 8, (i / 3 | 0) * h + 20); }
-const url = k.toDataURL("image/png"); window.MOJING.lastSheet = url; dl(url, `mojing-02-v1.15-shots-seed${SEED}.png`); return s;
+const url = k.toDataURL("image/png"); window.MOJING.lastSheet = url; dl(url, `mojing-02-v1.17-shots-seed${SEED}.png`); return s;
 }
 function dl(url, name) { const a = document.createElement("a"); a.href = url; a.download = name; a.click(); }
 window.MOJING = { F, CLK, LT, EMB, camAt, stats, shots, sheet, grab,

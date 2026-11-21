@@ -63,6 +63,7 @@ button{font:inherit;cursor:pointer}
 .cal .day .sn{font-size:11px;color:var(--mute);line-height:1.2}
 .cal .day .ev{font-size:11px;line-height:1.2;color:var(--red);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cal .day.has{background:#fdf2e6;border-color:#e8c9a8}
+.cal .day .ev.dly{color:#9a7a2c}
 .cal .day.daily .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);margin-top:2px}
 .cal .day.today{outline:2px solid var(--red);outline-offset:-1px}
 .cal .day.sel{background:var(--ink);color:var(--paper);border-color:var(--ink)}

@@ -30,9 +30,7 @@
     moreBlock({more: e.more, ref: e.ref}, NAMES) + '</section>';
   if (e.shop) h += '<div class="shopnote"><span class="seal">香</span><span>' + e.shop + '</span></div>';
   if (e.fire) h += '<div class="fire">' + ICONS.firecracker + '<span>' + B.fire[e.fire] + '</span></div>';
-  if (slug === 'qingming' && B.cemeteries) h += '<details class="cat" id="cem"><summary>' + ICONS.mourn + '<span class="cat-name">附近墓園・靈骨塔</span><span class="muted">7 公里內</span><span class="chev" aria-hidden="true">›</span></summary><ul class="big-list" style="padding:0 16px 12px">' +
-    B.cemeteries.map(([n, km, kind, pid]) => '<li><i></i><span><b>' + n + '</b> <span class="muted">' + kind + '・約 ' + km + ' 公里</span></span><a class="muted" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(n.replace(/（.*?）/, '')) + '&query_place_id=' + pid + '" target="_blank" rel="noopener">地圖</a></li>').join('') +
-    '</ul><p class="muted" style="padding:0 16px 14px;margin:0;font-size:13px">各墓園、納骨塔對燒金紙的規定不同，有的集中焚燒或不開放焚燒，出發前可先確認。</p></details>';
+  if (slug === 'qingming') h += cemBlock(true);
   h += '<p class="region-note" style="margin-top:18px">' + B.regionNote + '</p>';
   h += '<p><a href="/jieri/">← 回節日日曆</a></p>';
   document.getElementById('festBody').innerHTML = h;

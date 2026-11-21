@@ -92,6 +92,15 @@ window.WHO = [['', '全部'], ['shen', '拜神明'], ['zu', '拜祖先'], ['di',
 
 
 /* 婚喪喜慶卡片 */
+/* 店家 7 公里內墓園・靈骨塔清單（預設收合）。box=true 用大分類框（節日頁），否則用卡片內的展開條 */
+window.cemBlock = function(box){
+  const B = window.BAIBAI; if (!B.cemeteries) return '';
+  const list = '<ul class="big-list" style="padding:0 ' + (box ? '16px' : '0') + ' 8px">' + B.cemeteries.map(([n, km, kind, pid]) => '<li><i></i><span><b>' + n + '</b> <span class="muted">' + kind + '・約 ' + km + ' 公里</span></span><a class="muted" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(n.replace(/（.*?）/, '')) + '&query_place_id=' + pid + '" target="_blank" rel="noopener">地圖</a></li>').join('') + '</ul>' +
+    '<p class="muted" style="padding:0 ' + (box ? '16px 14px' : '0 4px') + ';margin:0;font-size:13px">各墓園、納骨塔對燒金紙的規定不同，有的集中焚燒或不開放焚燒，出發前可先確認。</p>';
+  return box ? '<details class="cat" id="cem"><summary>' + ICONS.mourn + '<span class="cat-name">附近墓園・靈骨塔</span><span class="muted">7 公里內</span><span class="chev" aria-hidden="true">›</span></summary>' + list + '</details>'
+    : '<details class="more"><summary>附近墓園・靈骨塔（店家 7 公里內）</summary>' + list + '</details>';
+};
+
 window.occCard = function(it, base){
   const B = window.BAIBAI;
   return '<div class="card" data-who="' + whoCats(it) + '"><h4 style="margin:0;font-family:var(--serif);font-size:18px">' + it.name + (it.common ? ' <span class="star">常見</span>' : '') + (it.roles ? ' ' + roleBadge(it.roles) : '') + '</h4>' +
@@ -99,7 +108,7 @@ window.occCard = function(it, base){
     '<dt>金紙</dt><dd>' + linkPapers(it.paper, base) + '</dd>' +
     (it.incense ? '<dt>香燭</dt><dd>' + it.incense + '</dd>' : '') +
     (it.extra ? '<dt>備註</dt><dd>' + linkPapers(it.extra, base) + '</dd>' : '') + '</dl>' +
-    moreBlock({more: it.more, ref: it.ref}, base) +
+    moreBlock({more: it.more, ref: it.ref}, base) + (it.cem ? cemBlock(false) : '') +
     (it.shop ? '<div class="shopnote"><span class="seal">香</span><span>' + it.shop + '</span></div>' : '') +
     (it.fire ? '<div class="fire">' + ICONS.firecracker + '<span>' + B.fire[it.fire] + '</span></div>' : '') + '</div>';
 };

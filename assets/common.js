@@ -1,7 +1,7 @@
 /* 共用：圖示、頁尾來源 */
 window.ICONS = {
   /* 圖示統一：墨色細線（線寬 1.6），顏色跟著文字；選中／今天時外層改紅 */
-  fest: '<svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="節日"><path d="M20 4v4M15 8h10"/><ellipse cx="20" cy="20" rx="10" ry="11"/><path d="M20 9v22M14.5 11.5c-3 5-3 12 0 17M25.5 11.5c3 5 3 12 0 17"/><path d="M15 31h10M18 31v5M22 31v5"/></svg>',
+  fest: '<svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="節日"><path d="M20 3v4M15 8h10M15 10c-8 3-8 17 0 20h10c8-3 8-17 0-20z"/><path d="M10.2 16h19.6M10.2 24h19.6"/><path d="M15 32h10M17 32v6M23 32v6"/></svg>',
   wed: '<svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="婚"><rect x="8" y="7" width="24" height="27" rx="2"/><path d="M13 14h6M13 18h6M13 22h6M16 14v12M21 14h6M21 18h6M21 22h6M24 14v12M12 28h16"/></svg>',
   /* 喜慶：「喜」古字形，上鼓下口 */
   joy: '<svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="喜慶"><path d="M20 3.5v5M15.5 6h9"/><rect x="11" y="10" width="18" height="10" rx="2"/><path d="M11 15h18M14 20l-2.5 4M26 20l2.5 4M11 24h18"/><rect x="14" y="27.5" width="12" height="7.5" rx="1"/></svg>',

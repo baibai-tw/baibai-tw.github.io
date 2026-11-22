@@ -116,7 +116,8 @@ window.occCard = function(it, base){
 window.templeCard = function(t, base){
   return '<dl class="kv"><dt>金紙</dt><dd>' + linkPapers(t.paper, base) + '</dd>' +
     (t.offer ? '<dt>供品</dt><dd>' + t.offer + '</dd>' : '') +
-    (t.extra ? '<dt>備註</dt><dd>' + linkPapers(t.extra, base) + '</dd>' : '') + '</dl>';
+    (t.extra ? '<dt>備註</dt><dd>' + linkPapers(t.extra, base) + '</dd>' : '') +
+    (t.addr ? '<dt>地址</dt><dd>' + t.addr + (t.pid ? '<br><a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(t.map || t.name) + '&query_place_id=' + t.pid + '" target="_blank" rel="noopener">在 Google 地圖開啟 →</a>' : '') + '</dd>' : '') + '</dl>';
 };
 
 /* 地區說明＋依對象快捷。mode 'filter'：本頁篩選；'link'：連到節日頁篩選 */

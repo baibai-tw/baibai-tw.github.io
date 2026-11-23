@@ -30,6 +30,7 @@
     moreBlock({more: e.more, ref: e.ref}, NAMES) + '</section>';
   if (e.shop) h += '<div class="shopnote"><span class="seal">香</span><span>' + e.shop + '</span></div>';
   if (e.fire) h += '<div class="fire">' + ICONS.firecracker + '<span>' + B.fire[e.fire] + '</span></div>';
+  if (slug === 'qingming') h += cemBlock(true);
   h += '<p class="region-note" style="margin-top:18px">' + B.regionNote + '</p>';
   h += '<p><a href="/jieri/">← 回節日日曆</a></p>';
   document.getElementById('festBody').innerHTML = h;

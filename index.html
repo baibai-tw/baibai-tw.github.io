@@ -21,7 +21,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="/assets/style.css?v=20261121i">
+<link rel="stylesheet" href="/assets/style.css?v=20261123a">
 <style>
   html,body{height:100%}
   body{margin:0;overflow:hidden;display:grid;grid-template-rows:60% 40%;height:100dvh;background:var(--paper)}
@@ -39,6 +39,8 @@
   .todayv .sm{font-family:var(--serif);font-size:clamp(12px,min(2.2vw,2vh),16px);letter-spacing:.15em;color:#4a453c;white-space:nowrap}
   .todayv .col{display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:4px}
   .todayv .col .sm{writing-mode:vertical-rl}
+  .todayv .col .term{border-top:1px solid rgba(74,69,60,.35);padding-top:8px}
+  .todayv .col .term.on{color:#a3392a}
   .todayv svg{flex:none}
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   .sub{margin:2px 0 -2px;font-family:var(--serif);font-size:15px;letter-spacing:.3em;color:var(--ink-2);text-align:center}
@@ -90,10 +92,11 @@
   <script>
   /* 首頁主視覺：多套墨景，進首頁隨機抽一套；店名條上每套一顆印（ch），點印切換。新增一套就在 MJ 加一行 */
   window.KV = (function(){
-    const V = '20261121i', D = '/assets/mojing/';
+    const V = '20261123a', D = '/assets/mojing/';
     const MJ = [
       { f: 'mojing-01-baibai-embed.html', q: '&walk=1', ch: '竹', title: '墨竹香塔', p: 'cover-3x4.webp', w: 'cover-16x10.webp' },
-      { f: 'mojing-02-baibai-embed.html', q: '', ch: '海', title: '金山夫妻岩', p: 'mojing-02-cover-3x4.webp', w: 'mojing-02-cover-16x10.webp' }
+      { f: 'mojing-02-baibai-embed.html', q: '', ch: '海', title: '金山夫妻岩', p: 'mojing-02-cover-3x4.webp', w: 'mojing-02-cover-16x10.webp' },
+      { f: 'mojing-03-baibai-embed.html', q: '', ch: '港', title: '水尾夕陽', p: 'mojing-03-cover-3x4.webp', w: 'mojing-03-cover-16x10.webp' }
     ];
     const po = document.getElementById('poster'), pw = document.getElementById('poster-w'), pp = document.getElementById('poster-p');
     let i = Math.random() * MJ.length | 0, gpuOk = true, tod = null;   /* tod：null 跟著現在時間；'day' / 'night' 由連按兩下印章切換 */
@@ -131,9 +134,9 @@
   <p class="lead">祭祀，是思念的延續。金紙不在多，心意最重要。</p>
 </main>
 
-<script src="/assets/data.js?v=20261121i"></script>
-<script src="/assets/lunar.js?v=20261121i"></script>
-<script src="/assets/common.js?v=20261121i"></script>
+<script src="/assets/data.js?v=20261123a"></script>
+<script src="/assets/lunar.js?v=20261123a"></script>
+<script src="/assets/common.js?v=20261123a"></script>
 <script>
 
 /* 靜態水墨佔位圖：之後換成動態主視覺（WebGPU），不支援的裝置仍顯示這張 */
@@ -174,9 +177,10 @@
   const cn = n => { const D = '〇一二三四五六七八九'; return n <= 10 ? (n === 10 ? '十' : D[n]) : n < 20 ? '十' + D[n - 10] : D[Math.floor(n / 10)] + '十' + (n % 10 ? D[n % 10] : ''); };
   const md = d => (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.getUTCDay()] + '）';
   const l0 = L.lunarOf(today);
-  document.getElementById('today').innerHTML = '<div class="big">' + (l0.leap ? '閏' : '') + L.monthName(l0.m) + L.dayName(l0.d) + '</div><div class="col">' + moon(l0.d).replace('width="48" height="48"', 'width="30" height="30"') + '<div class="sm">' + gz(l0.y).replace(/（.*）/, '') + '</div></div>';
+  const t0 = L.termOf(today), tmd = d => (d.getUTCMonth() + 1) + '/' + d.getUTCDate();
+  document.getElementById('today').innerHTML = '<div class="big">' + (l0.leap ? '閏' : '') + L.monthName(l0.m) + L.dayName(l0.d) + '</div><div class="col">' + moon(l0.d).replace('width="48" height="48"', 'width="30" height="30"') + '<div class="sm">' + gz(l0.y).replace(/（.*）/, '') + '</div><div class="sm term' + (t0.today ? ' on' : '') + '">' + t0.name + '</div></div>';
   const ev0 = eventsOn(today).ev;
-  document.getElementById('ptoday').innerHTML = moon(l0.d).replace('width="48" height="48"', 'width="40" height="40"') + '<div class="p-date"><div class="big">農曆' + L.label(l0) + '</div><div class="sm">' + gz(l0.y) + '・國曆 ' + today.getUTCFullYear() + ' 年 ' + (today.getUTCMonth() + 1) + ' 月 ' + today.getUTCDate() + ' 日・週' + WD[today.getUTCDay()] + '</div>' + (ev0.length ? '<div class="sm ev">今日：' + ev0.map(e => e.name.split('・')[0]).join('、') + '</div>' : '') + '</div>';
+  document.getElementById('ptoday').innerHTML = moon(l0.d).replace('width="48" height="48"', 'width="40" height="40"') + '<div class="p-date"><div class="big">農曆' + L.label(l0) + '</div><div class="sm">' + gz(l0.y) + '・國曆 ' + today.getUTCFullYear() + ' 年 ' + (today.getUTCMonth() + 1) + ' 月 ' + today.getUTCDate() + ' 日・週' + WD[today.getUTCDay()] + '</div><div class="sm">節氣：' + (t0.today ? '今日' + t0.name : t0.name + '（' + tmd(t0.date) + ' 起）') + '・下個節氣 ' + t0.next.name + ' ' + tmd(t0.next.date) + '</div>' + (ev0.length ? '<div class="sm ev">今日：' + ev0.map(e => e.name.split('・')[0]).join('、') + '</div>' : '') + '</div>';
   let w = '';
   for (let i = 0; i < 7; i++){
     const dt = new Date(today.getTime() + i * DAY), { l, ev } = eventsOn(dt);

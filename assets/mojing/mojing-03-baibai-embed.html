@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>墨景 03｜水尾夕陽（拜拜嵌入版）</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#efe7d6}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity 2.6s cubic-bezier(.4,0,.2,1);touch-action:none;cursor:grab}
+canvas.on{opacity:1}canvas.drag{cursor:grabbing}
+.pg{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+ background:radial-gradient(ellipse at 50% 45%,#f3ecdd 0,#e6dcc7 70%,#d6cab2 100%);color:#2a2622;
+ font:15px/1.7 "Songti TC","Noto Serif TC","PMingLiU",serif;transition:opacity 1.2s}
+.pg h1{margin:0;font-weight:400;letter-spacing:.5em;font-size:22px}
+.seal{width:46px;height:54px;border-radius:46%/42%;background:#c03a24;color:#f4ecdc;display:flex;align-items:center;justify-content:center;
+ font:28px/1 "Kaiti TC","STKaiti","DFKai-SB",serif;box-shadow:inset 0 0 0 3px #c03a24,inset 0 0 0 4px #f4ecdc55}
+.pg button{background:none;border:1px solid #2a2622aa;color:#2a2622;padding:6px 26px;font:inherit;letter-spacing:.4em;cursor:pointer}
+.pg small{color:#6b625a}
+#hud{position:fixed;left:10px;bottom:10px;color:#e9e3d6;background:#1b1d22c0;padding:6px 10px;border-radius:4px;
+ font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre;display:none}
+#hud button{font:inherit;margin:2px 2px 0 0;background:#2c2f36;color:#e9e3d6;border:1px solid #555;border-radius:3px;cursor:pointer}
+.hide{opacity:0;pointer-events:none}
+#enter.out{transition:opacity 1.8s ease .35s}
+#enter.out .seal{transition:transform 2s ease;transform:scale(1.06)}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="enter" class="pg hide"><div class="seal">港</div><h1>水尾夕陽</h1><button id="go">入</button><small>墨景 03</small></div>
+<div id="nogpu" class="pg hide"><div class="seal">港</div><h1>水尾夕陽</h1><div>此瀏覽器尚未支援 WebGPU，墨未能落紙。</div><small>請以新版 Chrome、Edge 或 Safari 開啟</small></div>
+<div id="hud"></div>
+<script>
+"use strict";
+/* =====================================================================
+   MOJING 03 | Shuiwei Sunset — baibai embed (from v6.2) (lighthouse lamp: unlit backlit by day/dusk, C wings + irregular B rim + D railing flash at night)
+   Standard: dynamic mock v2 + final stills (static-final-dusk/night).
+   Design space 960x540, horizon y=340 (63%). Sun x=375 r=30, moon x=380 r=19.
+   Light (sun/moon) is the directing force; waves are auxiliary.
+   ===================================================================== */
+
+/* Yehliu skyline: traced column-by-column from the user's reference photo 1
+   (taken at the Shuiwei harbour mouth; 1072px wide, from x=176, every 4px;
+   heights in photo px above sea level). Drawn at x0=430, x-scale 4.4px/sample,
+   height scale 1.265, min 2.2 so the cape stays connected to land. */
+/* Right lighthouse + breakwater + tetrapods as vector ink layers: polygons traced from the confirmed
+   static mock (mojing-03-static-boats-dusk.png, region x596-960 y88-540), five tones light->dark,
+   half-pixel coordinates, zigzag varint deltas, base64. Rasterised once at startup. */
+const VEC_TONES=[200,188,149,117,89,61];   // layer 0 = solid base silhouettes (no holes)
+const VEC='BASQB6gCqAEAAIAHpwEABMgG/AGwAgAAHK8CAAS8BqgJzAIAADDLAgAHuAP4C9gBjwKgAQ/4AgeIAqgBAJgD1wkARAaSBuoMCA4eAwsBBAcHAwPsBNYMMQYYAgqKA8oMEgwSBAYFMBZGBjcLDwtJFxAOB5IDsAwGCHYabAV/Dy8JBAoKvgPyCwkOBgoYBAQMEAUACRENDgIGB9QC9AjIAQkMIQAJBwMIHQIHCwcMHwIHDQEKCwRJAQcJCQgZAAULCQQCOgkIABQyChgcBQwC9gICHQ4LCwUGGQQGBl8GAgfiAQsIAwMDPQUoAVgKAQQdBBIIBAE2HwoCSBAIAkQLNAElBwwDcgMGMQAJLFUIBwYBEiMICxgJBQYPCRUJDAAYCQgADhYKGQMZDwkMABAhHAUUBBofAhAYBw4PBhUHAwoWGBkaEAMkDgUGAQUnAgcMMgAHGBcHBQYIAAAKCgQHBgQGGAkGFBQDHgxMAgIFMQMIERYBBAwOAQEJEQ0fByQNChYKAgIPFgQSDxgSFRgSCQgQFgkIBgoVEgIGCyYXGgoDBhkBBggHCBoBEg0ODAgLCBIVAgoMCQ4NBREGDwUFBgMJEgMHCxcgCw0PFCcBCwgLBQQHEQUAEAkBBQcGDQoBDBEXAAAMDwYIFA0KXgoKCFUHAQgmBB0CAgo0BBsKDwMPCiMHHgsBBTMMFRIbAzoXEgAQDRMALRghBA8IBxABBSEEAwkfAGETUhpNAgMIHQYbAxESFgVcAA4GEAkyByAEGgkYBgYLDAAACBoAAAkcAgoIGgkIBA0QSQAAEAsDAgcrCBsBHQxTAQ8IBwNJEhsAEQoCDAkELg0OBAIHDARMDxwEEAcaAAoIUxBABTMUmwEIIRgFEAgGDgAABxAIBAcKCBoDKgjQAQAHBTAFNgwbES4FBAocAgYMKAAfDRoFGAwUCx4UDgAACxgMBxMkDAIIngEAAxEZBgEFJQMICUQGBAoHBh4KEAAQEQEOQgcIDBAADgkIChIAAgcQCJ4BAAIHJgAA9QEHDwgFA4UBxwGDAT0bEQADIwUDGwQJBwcIBQ0JqQEKAQF5CQAHdwB6FQAAOwobBwMHaQgVDAACEgYNB+EBBEkHIwwfFAsqBwIRCQ0GKwyUBu4NJAAWCQoGOgUKEiMKFwshAAMGFwEBBwTIA+YNKgAwEEMCBbYD6A0OCQIODAYJAg+AAuwNEgkgAhcIJgEFCwwIagIBCCUADgADChEFEQZNAwS2BMANTxQZAWAbK4oE1g00C1IEBw0HCBMBBwkJAAEIBwcLAgUHCANSBi4UDgMmDAEJNgUIChwDBAoDDAUNIQYfAxsKLQkJCx0AAw4SAAQKKQgZBQMKIQANBwcIDwAGDRgAAAUHmAeqDQwMEAEACg8QAwkZAQSyCaQNQgoPCikBBuoIvA0IDxIJGgAOEgEGA4gKog0qBBUEE44Gsg0EDQwDCggMCRYADg4MBRgGCAsKBA8cCQspCgUFGwIDAwgFBwYL1AeyDRAXAxYeAwwJDgIAEg8KGwALBwUGBIIGmg0DGAsCCwsF1AeKDQoNBgYwAgQOBMoF/AwSAwQKCwgOrgnwDDQZDgwTBgAGPgsSJAcKLwEPCRMABBMNCBEAIcQH+gwNDgcDEQoFCRMABAwZAAcHDQYJDRUDBwwZAwMUDwsTBAURBgkoBBEVLgMiCAALDgUQBA8YGQEQBhMEGAIIBSIKBYoJ0AwQARoQGwIBCQTQCsQMIgECCAcKBOQJxAwWAQIMFQEE8gfCDAUoBwINEw3gCMQMGwQJDAYKBQooBAMMFwUtBgUFCh8MCBwbC6YHvgwMKggBAgYHCDMFAQ8UBAAJFAkLCQPYBrwMJgYhAgWaBsQMEgkCDCYKEwIDsga6DB4ECQYH0ArADCcIFRgPARYnDAQUBwbCBJwMEAECEBQMHwAGDQSqBPYLDAAKDBMCBIYG7AsQIAMEHQUOqAr0Cx4BBggCDQwBPBwUAgMIHwMBBwUIPQAFCw8ABLIG8AsPDAsHDgkIvgjiCwIOFhALBh0FERgHHyAVD5QF5AsDFDcQFAQlCA0OCQAgFwALDg0MBA8IFAISBxATBf4I3gsCDgwEDQwFDQbqBd4LAAoOAQQGERYLDQXcCdYLCh4BCgkEBQ0QygfaCxADGg4MMhAKERILFQsBAgsbCAsHBQYLAwIPFgsPAwSKC8QLGgEGChUCBcoGsgsKBgASFQQDAwXkBIoLCAwnIAIjDgsEpAeyChAPFAYHCATOBYYKBggpJg4nA/wIvAkDDjUAB/4HvggOAgEYDgIDEBkLCAUGtAjOBwwCBBwFSgsBAycJkgioBQ4UAxgLAwMMDQAAFxYABw0FsgjyBAYMASAHAwMRBaYHqgMCYgUIBwUIEQXcCOABEAQBIBEBAR0EyAjgAQgEAyAHBQegCOABHAIBIg8BARkDGgcBB+oH5AEeAwoiDQQFFQEUCwIHuAfkASIDBCIPAgMTABINBAaMB+ABDgQBIAUECQMBHwT6BuABBCYJAgMjBOAG4AEIBAEkBwEFogfeAQgGAyIHAQEfDeIHCAkUABZFNgUMiAEABCACFwoHFAICB0s7ABME7gdaDAQFDAsDBIoIWAYBFBIRAgTKB0wjJgkDCAtJA8gFgg4EDBwBCvABhA4OBAUFDAEKCAYHDAg+AEQNpwEJD7oEgg4bBz0ADQ0BChEHGwZEEksDCQgfAwsGWANyBgsHGNACjA0ICDgDLAYABxwAFA8GCA0GIA0CCCwDAwcnBAQHYw86FkEEEQobAwcGCwUBCgUHBPwG3gwLAQ8YFAIDogXQDCMMIAMDrAPKDDgeJgQN0AbkDAUDBA0NAicNBwIkDnULOAovAgAGRAYOBwPkA8YMKgoyAAfMBKgMDwcXBgMIDAgMBQwECpQFmgwTCyMECgYPBgAMGgwIBQANEgIE2AWKDBMEAgoKBAm4A/4LBgwUAgQMDgUABx0JEgcVA8cD1gbIAQUOBC4JCgEQBAYwBhgcB0oGDgCyAQYDAgYJCAAwBA8IAQRRBgMEBgfkAQ0MBTUFEgFcBgAAHwYBDgoAQgkKEwICNgwMAlgPRgAxBQYDbgUGMQAJLFcKBxYjChcwGQUXDwscHxwBLh8AEBYHEA8ICwUDCAUFAwYWFhkaDgUmDgsmFwIMECQHGhUCDQwJDgYLCA4AJhsAGjMONgsSGAINGAISDxwUDQoOEiQJAQ0dAxQhGig0JRYEBgwKCQYQCgQCCwcHBgcSGgUQDwEGDAkODQURBg8FBQYJCQcQPQYoCAYJVAgBCh8BBQcLCBcHAwYyBA4GCQYWAAwMCgADCRgLFwAHCwgHDAoQAwwqEg0CCAkMEAsGEAUGRwAEBwcCAgxCAQ8QCwABCgcFMwQHBw0GCQ0LBgkJBwwXAwcWDQ0NBgkFAxMMBwEFBwgVCQUIEwMHCAMHEQMJCj8CAAUcBw0BIQwDDBgGAAcWAwAIFgABBSIDCgoSBxAECxBLAgQKBwYJAwAHKQgbAR8MMwECCAUFJQEDCCcAKw4ZAA8OMAEEBwwETA8cBBAHGgAWClMgRQQACA0HHQAKCnQABgMDC14XAAUMAgAHQABmGBAHAQwcCAsHFgMECQYCAwYuBQQMCgAJAwoFBAYeBRgIBQwPCQYIEwIDDAcBAQs/AhkKQxEKAx0AAAoOAAgKCQgdAAEIBwVlBggRGAE1AUAPIAQIBQQGIgIjBQMJEQgFBxkDDgh7FAIGEAADCB4DEwECBRgADgYDDnogDAEhCwwDEQUQAwgIIAAKBQgEBQYYBgQDCwABCRAEIBEEBgkCAQoJAQQGGAMaChgPJwQCByAFIAQSBxYGJgkOBAoSGQwlC0EGGAwgDwgICgMQCAQKFgWEAQYPCzcJCAkQATICDAYDFCgCEg8DCRQMEgACCB4DAAgMBhQLDAwOAAAJPgoaB1gIBA0OBAIFFgYDCRcBBwYLCS4HABcZERgHAw0IBAFLBwUGEwcFCiMPD2sBCRULAzADAwcXBzQBDAQXBkweCCdLHUoABRUIDQEhNyuPAVs9Gw8ACScxAA2PAQifAQsBAAsJGBsNBBsIFgExCBULYQ8aCwcNBgEZCiMKAgYHEgwCBwoBCwcMJQIjCiwB/QEHJw4fFAsoBQITCQsEMwcDBQwjAAcHAwiNAQIDBgoELAEAJiECCRsHAgAWCQQFGwAYDQYHJRoHFQUDBwkIGQAEjAr0DTYFDgg9BAS0B/ANDgMEDgcCBsAJ7A1ECAMGKQAIBxUEBMYJ0g0OBQoKDwQK1Ai4DRgABg8QBxwAEBQHCB0DEwoVAASiBaANGgAaDBMGHY4GpA0QCQgMDgkWAA4OFAsIBAcIEAAECRACBRASCwYODgUGBgUQCAAICAMICAI7AAUFBBMLCAcPDwpVCQjSB7INEhkBFigPDgICGBEKMQMGhgacDQcYCwIPDRIDDAsJ0geIDQ4NBAYwAgYOFQgLCRMGDwMFygX4DBQBAhANBgkJA/II7gwmAiEEBLoK7AwUAQgGDQYGiAnQDAoDKg4TCh0DCAcDugnCDCIOFwYE4AnKDAgLGAQFEBDuCMoMAwgfBwsKBggsAjEGBAYiAAMQFQUxBgcHCB0SAhoZBPoHvAwLFAEiFxkn9grEDA0eEQEMCRcNHwQRFBAKBhwHDB0BCgIBDh4ABghLChoQCgEJDi8HBAUeAgUHOQcAESgKJgkTFSEBBBEXDgsPEhEiDRgSEiMQDSIBGg4EqATyCw4CDBAVAguQCPgLHhUOAQYOIBwJEAMTDwYZBw0WBwcJxAbiCxcEAwgMAwAIFxYFAwMREA8F/AXgCwIOFRYLDwwVA+QE3gsiBBkEBN4E2gsIDA8IAQka8AmKDAMEDQkBCAsTGQAHEgEjCwQPBQsCChAPDAkTBAcNAzgJBAgQAgAOHAADDQ4NCAoIBQYGFaIH8gsGAQYMFAUNBSAbGAgSHAQeDggACBMQCxcPAAgLGwgLCQMIDwkECREFBcYGsgsOBAIUFQgFDQXmBIoLCgwtIgAjEg8EhAWACwoFFgwLCgTsBfAKBAYbGAANA+IH6goAGAsOBPII7AoWAQoIFQQEiAbcCgoFGAwdBASyBc4KDAYDCgsFBJYHwAoNCgkBEA0EygeoCgUIKQwaGwa2BpoKCAgAEA0OAwsKBwTUBpAKAggJDAcLBYQGngoSExQCCAoPAwTQBYYKBggtKA4pBP4IvAkAChEIcQADggeICQIsBQ0P+AfACCABBAYHDg4KAB4EEQYKDAsEFiMIAgsPAgcTCQUKtgi4BwoGBCgDUg8BATMFIgclBCUIIAemB6gDBGIHDAcDAQ0ICQBLBNgHpgI2AwgGMQgEggemAhwDBAYLBgPECKICCQwbBQPmB5YCDAUkBgTOBpgCBAceBA0IBNgI4AEWBAMiEwMF8gbgAQ4EACAFBgkDBN4G4AEMBAMmCQMGygjeAQgGABwFBgcDAR0IoAjeAR4EAyQRAwARARIJAgEfBegH5AEGBR4CCCQlBASoCGQBDhACAgUMqgdYCgAiGQIGFxhGAQkRIhQxKQcjCRAAFHsE+gaEDgIKDgEDBwPMBYIOBAoUAAfCBPoNAAQcAiYMBQUVAwMHBJQL+A0ABBYGAwcFxAb4DQcGEwECChIBGogChg4GAAIFDgICBBQDCAQaAAIFPgEIBQcEFQABAxUEAwMLAgAGCQQpAwIFCAENAAMICQUFAgSKBvYNDwQKCAYDBOgI9A0ABhICAwUVlAOKDhIABANEBAgFBAYwBAkJEgMPAAsGDQMDBSUBIwkBBAwKIgIGBAMESwMGpgTwDQAGCgcuBgEFKwESsgXkDSMEBgYBBAsACQcZBhYBCAgWAAQHAgQMAAAKBgAABwUFCgMFiATcDQQGAwgMAQULBOwC3A0ABg4AAAUHuAPUDTMGBgAECCAABAcGACGcBcwNAAgOAAQIFAACBAkGDAwMBQsBAwMCBRAGDAEICAoJAggSBBAFIgIOAwUDAgUKAAEFGQAXBg0DCwIFBgsABQUnAwemBMoNIwQdChQBBgQEBRoDBPAEyA0WCAYBAQMJsATMDQ4DIgIGCQUAAwYXBQMGDwIKhAe+DQUEBRQfAgAMCgQIBRoAAgsFBwPYCbgNAAYaAgjyBrYNBQANChUAAAYQAAoFFgYFjgqwDQkAAAYJBBAADeoCtg0JBQEEEwADBBkAAQYQBgIFDgQBBxIEEAMIoAOwDQ0HJQYICgoBAgcGAAIICaQDrg0gBAgBBgcPBgcDCQQACQcACeYHlA0EBAEOHAMQBwMDDQQJCQ0AEoYE9gw/BR4MMwQNCBEAAQQRAwAKBgM2AgYFEAACBQ4CBgcKAwoECtoF8gwBBwUABwoTAwEGEwQIBBAHGgIG5gTmDBkEDwgABA4AAgUFxAjkDAAECAISAQEDBPIG3AwHDgwEBg0EwAjWDAQEHgEJBQO8A9IMKhYiBASgBdIMBwEHBgwCEsAFygwiAigMNwELAgIENAAQBAQHNgoIBwEHDQIPBQMCDAQABk0PCugGxgwABAoEBwYcAhwJBwMPAgUFCQYEhAa2DAYGGAQABQTEBbQMAwEFCgoABNQFqgwBBggEBAUJygSmDAsFBwYRAAEIBgYOAw4EBgUEugWeDAMICgQECQniBZYMCgQEDg4DBAUKBAYFAwsfAAuSBZoMEQkJBBUBCgYRBgEKHAwGBQENFgIE5ASiDAQFCgIJCAXWBYoMDwQACAYGDAsIugOADAIIGAIEDgwHAQUNBxEEBPwF9AsPEAIICgkEtAnmCwIIHgEBBQrkBPwLEgMBBwwABgkXAgcDAQoGAgAG8gTUBsoBAxAGCgEkCQgCEjIEBAMaAQoGCAMUAAQEAwQZAA0GFwUABg4MBgwHHgAwBAYArgEEBwQEACYDBAMLABAKAQJHBA0ICgA2AwgCcAYJBAYBFgcLBUIDBAMNBxIDAwEvAxIBTAYAAB0EAxIMAUYJGAEPAwIAOAhUEUQCWgUEBQ8EEQBJAwEDYgUGMQEDBgAiDQhPCAMUJwwXMBsHEw0HCAMQFRoFAQkYBgwDEgMEGQMQFA0WIQQSEgAGCwYABgsMDAcaCBIOCgIMDgEGFwEBDwMBBR4DBBMBAAgOCBAHCgIeFQAJCgsBDwgHBgQIAwYGJAACHA4YBA8WBBAPGAwLEQQLBwIDAwILDggGAxYEAA4IBQgKBBAECQkLBAMEBgYABgUABxoDCgQrKgQGCAAICxwNCgkaAgYOCgkGBgEIBAQIAQAFCQkGBwYCCBIGAAgNBgAECgoBAwkOERoHHA4GKAYMDggABhMSAQoNEgAWBAYKARAWCAEGBgAwEgEEBgMEBwEFCAkDAgUPChsAEQMFBQANEBMDBwkCAwMGDQgHBgYaAAEFCwQBBxkTAAkeFQYLCRUJBAUDBgkXCA0JAwgNCQANCwAECgcAAwgJAAAKCxAJAAUHEwgRAAUJBQABDiACCAYcBBQTAA0OCAEGBwAACAcIBAQUAwwkDgcGAgAICQYABgoLBgAGDg8SHRQFAwcEKwALCQkICwcBBwkKBw0HDBcBAxIFBA8PCQYJAQcZAAwJCgcBCQ0LEEkCBAgHBgkAAwsXCB8CCQMFCg4AAAQNBAsJCQ4JAwQFIQAADAYFDAAcDCcSFgciAwQJCAQGBw4CBAMEBFwGNhICBxsJCgMBBRkFBQUKAywMBgoNAQcGBgESCgYIAQQFAQIEFAQJBRgDAAUGAwYCAQguBQADKwEDAwYBABEOAQQFCAoOCQYEEgEODg4LCAAGBgkEDgAOCwwEBxAUCwQCAA4GAAAHCAIGFA4UAwQRBQUEGwABCggACgoACgsGBAweAAgDAgoeAAQFBgYuAAUHCwMLBAMFCwAHBR0EDQ0EAw4ABAwOCzYEBAsKDBQGCQIDDiYCEBEPBA0DAAUQAAQEFAMgHwIGDQwDDAYEJAIABBsEHgQACAwEGA0IEAoAAQcEAw4ABgYgAQoICAUgAwQEFgEQCB4ABBEHBRUAAgUSAgwFCgQYAQAZDQcLAAUIFR0EAQgGBAUEBAEICAIGBRIAAAUFAwQHCgQABQcDBAMAJwUHBgsHBQQLCQsKCQQbCwsLA18ADRMJAQAJLgAAAwkFIwADAwYDLgIQAxwEAAYbAiIKJhIDDRMBBAMSAAgHAw0rCyEREAASCAwFIgABDRkJBA0GBAYFCAIAGwsHAAcLAx0ZjwFbPRsNAAMDASEfAgcDBwQFBQErBRcCHwUjAV8IBQA9BQIFBQE0CwAHDwEbBwAFBwEnDgUFAAcJABEIBwYMBgkFCwILAwABDgkDBg8DCw0CAyMHBAYaAxIJEQM3BgcBEQoNCAIGAxoEAAMbAQMFBg0ECAwCAAsMEQAPCQkICQEfBBEGBAAiBAoBjQEENwktCBEACx4TJgUCDQkNBDMHAwMKIwIHCQUKOwQSBgImJQADEQIZEQAKBgMmEwENBAUXCQABDAYGDQYFAwEJAw4LAAUPABcWBRMFAQUHBh0AAwkFngn0DQQDGAIDBgkCBowK8g0gBRwCCggFBjcACsAJ6A08BgoGBQgdARMIAQUGBwUECQMFogjIDQYCAg4DBAMDBJwKyg0EAxIABAYE7gfIDQwBCgQHCATICbwNAAoFBAAJA5oFrg0GBQoGBvYEpA0iAAIGCwIFAwsEFq4Jsg0DCiEBDwYBCA8HCggCCAcICwIDAwQFCAICBxMPAgUGAQQGCgAIEwoDJgAE4ASkDREIAwMQBweGBpoNAxoRAhMRAgMUBAwLBNIFkA0IAgMQBwEF4gruDBoBAgQDBBEABvAI7gwGAyAABAYHBh0AB/YI4AwYBQcFBgkQAiAOFQwG4AnEDAoHGAQHFAkFDQAEigm+DAsKBwAGCRDwCMoMAgYFBAQMCQYCBgcQGwchAgcGCQcEGwgHDgQYFyIEBI4LugwBDgkGAg1N9grCDAAQCRAbAAgMAAYHBBcJAgUQAx8ABQUIAzABAQMXBx0GBw4OCgMKCA4DDAYGEwEJDBoACgoDBBsABgQABhcYBwMnAAwKBQYRAQEHDA8DBw0AAwYHCQMRFAEiBgIDGAEAAwkDBwsLAxkCAQUGCxMQEwUGAwYTKBEVAQkRBAUMDAQABAkODgEGDAIMDAwHCBUODw4CFgUaDh4ABIQL4gsQAQIEDQIQkAj2CwYFDAEMDRIAAgwGABweBxAHAgETDQYJBw0ADRYJBwTgBuILDgECBA0CBagH4gsBBBcBAgMQAQT0BuILCAMOBhMCBMQG2gsIAQYKCwAt/gniCwEECQACEAUYEQANDxUCCwwBFQcCAwMCAwoAAgcLBAUFEwAKCgYBBAgDBAcDDw4FBQAHCQIDAwAFCgEABSUBAgMiAAYDGAIOBQoIBgUGBh4ACAsKCAoDBAgEyAfCCwIICQYCCwTaCcALBgIDDgUFBdAHugsKBgAOCQEDDQjQBrILBgYAFAcGEQADCwoRBgME5AmUCxYAGAoTBAW8BYwLAgYbGgILEhMI5gSICwoQBwINEhcOAwMEIxQPBIwH/AoCBBcWAQMGigX4ChAKDAABCA0OFxUErAX0CggGAwgHAwXyBfQKGRwJBQ4RDgcH5gT0CgUKCQENCAUBBAkaBwWOBeoKCAQDCAUAAwUF8AjqChgBEgoZBgkDBuIH6AoEBAMaCwwBCQYVBfYE4goMAwQMBwQHBQTMB9QKAggHCAENBYgG2goKBRwQGwAHBAW0BcwKCgYDDAcABQUExgfOCgEGEQAQCQXuBL4KBAYBDA0WAhcE7Ai6CgoFGAYTBAWSCbgKjAEFBAgLBkMABOoEpAoGBgMKAwEKygemCgAGBwYbBhkSEwIUEQoCHBsQAAWMCZQKBQgLAgUDEgcF1AaOCgQIDQ4HCwgHCJwHjgoCCgkOBwAJBwgJCgECBQqUBooKGAISFAAUCQ4FAwELCgsPEyMQB9IFhgoEChkSDRYHAAEFFCkK/gi6CQAOBwY5AAcENQAFAwQFQAAmCwSyCKgJCgUKCA8EF/YHwAgKBR4EBAoDCgMHAAwIBAAMBgEEBgYACAUGEAEICwAFBhEEBwkHAAkTCwkEByG8CLYHBggAJAQGAU4DBA8DAyMBJAUBABcDBQAOBwIAEQEICwYDCAoEBAcKDCMEAwMASwgDBiIQCAQlCAEAGwYBBhQEHwikB54DBgIBdAcCCQcCIQgJAD8EogjQAggGAwoFBQzKB6oCBAUSBQ4EWAAJDA0BAwQbAycGCQULAgXiB5QCJAMYBgUEMQAFzAaYAgQHHgAGBhEIB9gI3gESAAQEACIDBBMDASERmgjiAQQDHgACBBADBAQAIAUGCQUAFQMBARwRAAMJAAgHBAMFC94G3gEMBBADCAYBIgMEDQMACwUQCwEBIwSqCGYBCgwEAgUQrgdWBAIkGwQIFRQmAQQFCgQADQoCFhAtJQIRBwcJCAAUBOYHPggDCgoDAnAEqgb+DQIIEgUFAwXiCfwNBgoQAQgEBQ0LwAeMDiQDBAQqAgEFCwMLBAUHDQAHBRcEBaQIgg4KBhYADg0tAAT+BfoNAgYKAQEFBsYD+A0CBCIEHAoaACENCcIK/g0ACBABEAggAAILBQcpAQUKC9IJjg4HFQkDCwYVAQcECAQCCAgCGA0IEgzKBtgNDQIJAwUGCQMLBg0DCwIFCBAIHgUMBAS2A9YNFQIJBhgBBqoF0g0GCA4ADggcBgELA4oEzg0hChYBBoAHyg0JDgcDEQoBCCgDBOQGvg0GBgwABQ0FzAK0DQAEDgYCBQMDBKgFqA0CBBQEAQMH0ASsDUgILg4fDxkFCQILBQPcA6QNCAYQAQ3eBJQNHQgDCA0GDQEJBg0FBQogABYHDAQECRgDBOoHkg0AEBoBBQsQ4gWEDQcKABIaAgoJBgAEBAMUBgIECwUNBwcLBgcBBQUACSLuBJ4NKgQEBgQABQcCAzAGEAoCBgwCCQoBBw8DEgwECAMGEgcIAgIDBwMEAx4GEwkPAhMRCwEFBQYPCw0LECcBCQYTAQIGBN4DgA0rAgEGCAQE2AXsDAUABQoMAQTSBOwMAwEPCgoABfgG3gwHAAUKCgQGBQTSBdgMIgQBAw8BA4wG1AwEBBoCBdIK1AwVAxUEAQQkAgb0BtIMFAIWCRECCwULBAfeBq4MCAIGChoAAQUNAgMNBMIGpAwBDAoAAwsJygSoDAUFBwAHBg8AAAgIBAwFDAQEwgWeDAkCAgoIAwjYBKAMAAoKAAwKCAMDDQkGAwsG6AWUDAoUEAsIBgYDAQsI7ASUDAAGCgQcAAEFBwAJBwMIBNYFjAwPBAQKCgMHxAOGDAQEDAEEDgoDAAULBwT4BfoLCwwCBAgFA4wL+AsWCgcHBLYJ6AsABBwAAAMEjgnoCwIGDgIBBwjmBOwLBgwGAAINCgYICRUEBwMFwgiCBwE2BggGBwIvnATUBswBAjoHCiIABAQBBhMIFAQQBSwCMgU+BiQDBgQJDBUEJwEXBAkFEwIDAxkABQQhAxIaByQEFAEaBAYDFgQKAH4IDAIpBgMIDgOSAQYVBAQCJAEsBQADEwM4BQYDBQUIBwMCGQMJAVIEHwgBBAYKAgBKBSAHCAQyBAICIgk8CxoCYAcEBQ0HCDMAASYFBlkMABADBCUIFzIbBRENBAwHCAUNBRIREgISAwIFCwMCBRAEDAEUBQYXBQ4SCRYhCBASAwgHAgIMIgoICg4GCA4DBA0FBwQFAwENBRwHBg0DAQYQCCAJFhEBBQoPAQsKCwwABgYoAgEMDiYEDxoEEA8UDgkNAAsPBwgLEAgKAxIEBAQDChIDBQMCBQwGAwQCBggDAAkkAwIDDgIBDBMCCxAPCAUMBAQIAQQJIA8ICRwEBAwKCQYGAAwGAgIHBwcGCxAWDA8IAAIIBgIBBxQXEAUgDigAAAYlAAgSABQGCg4IAAgTEAMMCQoBHgIEDAEQFAwEAjIGAwoCDgoDBgcFCQALCgULCwgFDgUAEQ0VBwAXDgkABQMDCQIDBRATDgQABxkVAAcgFwQJBxMPAg8DCQcHBAsDBQcECQkABAYDBAcAAwgJAAcaCAIGBwANCAAMCgsGAAgHAgAGDgAEBwgICCAOCQoEAQoGAgQOCQwjGgkDBwgFBx0EDQkPBgcFAQcLCAELBQAHDBMBBRYKBwoMCgkKBA4DFA4KCwgACgoICRABBAQHDgoHEAMBCggACgoACg4aLwIACgoIAAoJBgAKHAIMBwsNAgcOAAYGFgUqBgQBAxUMBgIMBgZCABwfBgACCA0MAQhMBAQLCgYyBAoEBQgEDAwGCgUaAQEFIwEFCQwFMAAGBDIAEAMUBAYDABcHBQ8ABQgXIQYBCAYGBQYKFAIEAwkHDhMBJxMFFAMCBwkHAQcLAAEDFhMCGQsNawMLEQkDAAkEAyoADwUbAgUDBgUaAVwCCAQFBi8AEggqAQgHAwsrCyERBgMcCgYDKAEBAwkAAAMIARMFBQUABxkVEgMCCxADBAUNAwMHGxVdNysfOxsRAQUlLwIHDwFPBzUDHkkDDS0AGwgJBBEIAAQKDAUGCAEGBAACFQYBAhEGAAYUAhEMBQkDBw8AEQEcBQAAHwkPASUIBwcJAQ8ICRQAIQkCCQYCAQsJBQIaAwQTBQYHBRMEAQAXBwUEAwMPCBcHBwgJCAAGBQgCAgMJBQoFBhEECAILCgACEQcPDAsBKQYFCAIAowEFIwwfDgUGByoFAhEJCwAdBg8HBQUKIwAFBwMIEQIWBggDCgQaAQQGAB4DBhEABQUFBgcAAwMADQEMBQYNAAMDCQQDAwEZBA0FAAUKABIGDAUGIwADAwEnBRYCEAUGIQAFFQMUIwQHBQERABINBgcDCwQFBQAjBAMgAAYEDgcLAQMHBQgdAAMLBOYJ0g0GAQYIBwIEngjIDQwEARAFAQa4CsgNAQgfAQIFDAUOARGoCaQNCBAHEgkJEwEdHg8CAwMEBQwAAAMTDwAHCAEMBgwXKgEF4grsDBgBBgYFCAsABfAI7AwoAQIICwgZAAf0COAMDgUIDxICIg4VDC8BBvQIygwABQoJEgIDBhMKDfYIzAwFCgIKDxwXBTEGCQkGCQARCAcOBhoZIgYFjAu4DAYGBQwJBgELQvYKwAwBHAgCHQgLAwgOAAoFAhcHBQsLAwEQDhwHCBMDBQocAAgIBQoPCgkAFRYHBREEDwMIBgAGDQYNBwgNBwYDAREjBAcwBBoBAgMJAwcLJwABAwoPFxQRBxAbDgkWBRcDBw8GBwwMBgkQCgoNFgAEDAUODQUNAhIODAMKFw4NJgMcDhIDBPIImAwECgcCAQUEnAXiCw4BAgQNAgncBuQLCAUQAgYDBgQkAxQGAQRVAhSQCPQLGAsGBwEHCAECCAoCBAooIgkCBxAHAAEREwILBQsKAhIFBAMLCQkFlAnECxADAgwDBAsBBMgHwAsCCgkIAQkqgAr0CwUKBQUFGBMBCwsVAAsMAwMADQcCBQUFDAEJEwwFCwkCBQUABwoFIwEBAzAHFgISBQQICAUEBh4ACAsDDwgDBAQDEAYICgMGCgoAAAYJAAAICAAG0Ae4CwoEBA4DBgsFAQ0EtAS+CwQFCAQDCAT2BLQLCAYFEAcDBMQHsAsGCAkEAwUI0gayCwYIABIHBhECBQUGFQgHBdYJjgs0CAwKGQIfCwa6BYoLBAoXFgAIBQQAEQjoBIgLChALBAkQGQ4FBQYjEg0H6gT0CgkMBwMPCgcDCAsUBQXuBe4KBAoZGgsHDhEN7gSACxgFBg8KBAUMCAYOAAQLBgAGCAMGBwARFgbkB+gKAhIDEAkKBQcIHwSgB+gKAQgnJgEDBeoI6gogAxQMAwQdAgT6CeQKDgMCCgMCBbIK4AoBBBkECQMWBwX8BNwKDAgFCgkBAwUGhgbcCgYHBgAgEB0ACQYE5gbUCgYHCgIHCAWyBcwKDggFDA0FAAcJ0AfaCgkMAwEADQkADxADARAVDAMEhgjCCg4BBgYHBAbsBLgKBgYAEBMeAQUMKwTcB7YKBAMSCgkCEagKuAoPEAcCDQMLBA0BAQcJAAAGBwIJB10ABwMUCVQCEANAAAT6CKYKDgMOBhMCCcwHqAoHChsGHRQVABgTCgIeGxACBNgFlAoIAQIKBQIGkAmWCgMGEQQPAwwJFAEF1gaOCgIMDQwHDwoHB5YHiAoKCAAGCRALAAcFAAUMlgaIChQCFhgAEAsQCQkKDQkTBwEdEgMBAgcH0AWECggMFxARGgkAAQUWLQqACbwJAQ4PBh0BIQYtACEFBgVaAToPBrIIpgkMAwgEAAYNBAUDDvQHwAgIBSICBAQCHgoKCAUIBgIUIQoTBwcNExEIBQz0B9IGDgAACgoCAgoHBgAGBgEBBg0CCQMBHwSyB64GAggHDAEJBvoHpgYOAgAaBwYNAwAXBMQH7AUEBAMQAwcKyAegBQYOABALHAkHACcEBwQWBA0DBweoCPgDCAYEDgMMCQkEAQUHCKYHnAMGEAFoBwQLBwIrBgMCPwWiCMwCCAYDGAcHABEE/AfAAggDCAQJBgbaB5YCGAcqAhIGGQYpAAfwB0QLAgcDExQaAwoHBgIJ6gceBQMHBAAUERAIBRACDAUFCWME5An8DQQIDAADBwjCB4gOGAIKAwQEDgADBRMHFQQFpgiCDgYEGAAKCScABdIK+g0ACA4IIgADDwSGCvgNAgwOBgAJCM4JjA4HEw8EFwECDAgCGA0IEATKA/gNAgRSDiELB7oH+g0PCwEIBQEJCAAKHAAMuAbYDQkECwEJBhkDAwoOBCADBgQCBQMBCgMFsAXWDQAECAEuDAAHBoIH1A0FAwMICQEFCBgEBOYGvg0IBggBAwkF4gXADQQGFAEHBQAFA9oErA0oBA0FBOwHlA0ADBIBAQkG2gSUDQcIGwwgBwMDCAEI3AWeDRYEEA0FAwsICQcBCQcKC84FjA0JCQUOLQAPBAEGCwQmBA0FDgU0DAPIA4QNEwAABhWWBp4NCAcKDAoJCgQQARIMCgsKAggICAsTAQsJCwgLBwAHBwoFAAMNDxQPAAT6BuAMCQADCg4DBeYJ0AwMDAwBAAMNBQT4BswMAgYcAw8FBPIGqAwJBAAECAQJyASoDAEDCQADBBEAAQYEBA4DDAQEkgeiDAkCAgoIAwjYBKAMAgoKAAgICgMDCQsEAwcEhgaUDAAIBgQCCwb2BJoMAgQYAAEFCwMDBgWABpQMFQAGBgAMDgMUkAeYDAAEDAEODA0KBAQKAQwoBg0cBhwXBRkPBA8DBwcLBAkDBQkNAgEGBNYFjAwNBAAGBgQF0AOGDAgEAAwKBQADC74EigwJAwsCAw8DGgUGEQEABAoIEAcKAgOiCugLIgYHBQTkBugLDggOAAQFBbgH5gspBAQGFAMMBATAB9oKDwgCGAwRC+YErAoFDhESAhIFBAkFAwgEFhwLAQcMHwXECIgHATAEBAQJACEEhAjMBggGCAEBBwS0B/4FABYGAAIRpASoB/oFBSgTBAMZACAIAQYGCAAGCgoPCAQIBQYCAR4LAwELBxQHBwMGABYKDxoGACIHAAARAwMEBwMABSITCAAmBwIACAgKAjQJSA8gAloNDAUFCAMACQkGMQEBJg8MTwgADgUGCQEDBhgSAAgJBAcLAwgRCg0WDQMKFw0YJwsFDAYGAhATHgwAAgYNDgkBCAgIAAwSCwYJDhsQAQgJAAMFCgkHDQ4XDgsHBgkDBwoRAwoMAQwHBgEIHQgMDgAGCwwEBiAICgwMBAwQAAkICwANCAkOAQgIIAEKBAYBAQcGAwQEAQgGAAQGGQQMJgQPCggOAAwHAgcIAA4MCQ0CBREJAAcIBxIIEAEOBAQIBgkSBCQFCQsACQ4TCgEKCAIQCgYLAAcICQASBAcQEwAJEBEKAwwIAAYLFAcWEQgCAQcOAwQJBgoIAwYEHgAGAxgGGA8HCwAIDQgADQwJCwADBQYFEAYGAQoWAwgKCDgEBgQDBiUABg4AFAgMDAYCDBUQAAYPFAIYDAAQFA4GADAQARAQBQQHBQkAAQYKBgAOAwQHAwELDQYFAwgHAAcJBAcQDwMRDQcABwsAEQoDBgsNAAELEBEMBAAFFQ8EDA0QIxoHBQcQDgUIBAEGDgoAChAcAwQrAQIMKAIGBgwDKgAMBAUTCAMIBggSQgAUFw8GCQEABw4FEw8ABwoDBAYKAAQRBgUWARoCDBIBFgUCDwsVBA0QDAEEBAAGDw4EBkQCCAsIBiICBAQkAwgECgMcAAYENgAOAwQEEgACGQMDEQAFCBkjAgMOBAAJBAEIEg4AAxMQBwElHQcCAx4DCw0NBQgPDgkEEw0DAwkJA1cACw8PCQIRAwEfAgAEHAYDCAkDBQwHAwAKCAMEBAMKBQMHBDMDAAcJCgUAAQ8HBAMFAwgMAgMIDQEDDwsIBAYFAgkNBQQNAwYXGQAHAwEGDgYSFhYIARoLAgMDBhUNAAEMDQQBESEABwYECgMKBQADCwcBBScaCQgTBgAECgoCUAUSBQQICAUGCBwABAkBEQwFBAYDEAQGDAEECCACBgNKAQgEKgAEBAMGLwAIBiwACAUCCREJGwMbCwcJCQAJCQQDDgpCAw8JAgcJCRkLCAUKAAADEQAICQ4EGgkNAQUFAgUjBBkDAQYHAAEICwUABkkCFwkEAyAABAUMAAYHCQQHAw4HVQMACUUCAwMCBRwHTgIgAwQDCgYmARwODwIJCBwIBAQDCCIDAgMOBgkLWzUpHRMAFQcGBRICKxMPAAMDAg8FEy0ECQ8FdwUQOQMiBAQEAQgHAAAQCAwGAAQFCAYIGAEIEQMFCAcDDQQRCwUNFwcBCRAFCRUQBxcNBREFDAUDBzMEBRIBAAsMCQANCg0wAAYGBgUDBQcEDQMAJwMJBQQCGgcAAAYGAAQKEQYNAwIrCQAFCQYLAxMQByMFAR0aABAFDQUZAgMDBB0LIhkAAhsGvgrUDQMGOQEaExYHBgQG4groDBgABgQHKAsZCwkFjAu2DAgIBw4JBgMNWf4K3gwDBhkECwMOHgMGCQkZCQ0NAwwQHgkKDwUDCBgCBgYBDBEMCwARFBUDAQQGBgMGCQMACQMBAA4XAhcnBQ8EBUwAGREdBAMDBAkNDBMFAQkaHRkICRoVAwAGDAIDBBEDAwcLBBUJKwADBgUACwcEHwgHEAQQEwwFFAIWDBAPGAIBBh0OAQ4GAA4RMgwBCRENBAUICAwDCAoGBxIECAcaAAAYBA0QDyYDHA4MAw4CBgYAGAS4CK4MCAMEBgcEBr4KmgwHChUCCQoFAxgTBKIF8gsoAQIGJQIGrgTiCwYDFgAGBgUEFwAE0ATICwgBBAYHBATWBcILAgoLCAMHBpwEwAsKCgMSCQMGBQMFBqIJvAsGBgEODwADBQIJBI4FuAsIAQIIBQIE9AS0CwwGBxIHAQSoBrALCAcIBAUGCtIJjgsKAyoMBgEqEAYIBwQXDR8CHwsIvAWKCwQKFxYACgcEAwMCDxgZBvQF8goABhscDQkQEw4HB+QH5goEBAMgBwoHAAENCBsF5gjoCiQDGA4FBh0CFugE/goKAwwCCgUBBwkCCQkKCwwGAAoKAQYGBQoEBhAABAsGAAgKBQgHABEWBwAGhgbYCgwFIg4ICCcBCwYFsgXKChQECRIJAAcFDcgHzAoICgAICwwPIgsTAA0DACkuBQIDA0JHDgUEhAjAChABBgwRAQTaB7YKDAMQCg0EDcwHpgoHDhUEHxQLABMMCQMICQ4DEg8OABwZDgIE6AmSChIBAgYPAgWiCZAKBgIBCgkCAQMM4giaCg4DBAUWAQgGAA4WAAwGBQQ1AQMJCwAF1gaMCgQODw4JEQgHB5gHhgoKCAEMCQ4LAAkHAAUMlgaGChYEFhgBEgsQBQAFDQoRCQ0LAhcQBQMIgAm6CQAQBQaVAQQPBwIDZAE6DwWuCKoJCAkSBgMKDwAEqAfCBwYGAwoFBQXQB+IGAA8SAgsIAQgE4gfkBQkaDBgGJQSUB5IEAB4ICgIhP8gIqgIdCiMBGwQJBVMEDBIHIgASBAQDDAQQAGYEJwYLACsGBQgEAHYFBAYMADoDEgQGAQgGAQQGABAFCAMTAR4IAwYIAgcKAz4AAAMRAAMDBA0GBwwKDAUACQYFAQcKDwQTCAcDHQgJBwUAJwYDCAYCEgQHAy0ECwApBzsIDQANBroHlgUOGQoACggCEA8GCJAImgQKAgQGAhADBgUJAgkJAAS4B5gEBggFDAUJB8YHlgQQAQgICw4FBQUGBQUEtgeCBAYCAQoFAQPIB/oDABQDAwSYCPQDBg4DDgUPDsYHvAMGBAEICgkIAAAUBQwELAcGBQMECQMHAhEJBQzoB4wDCAQBBAgQBwwDAwkEAQ0ICQQGAQcFAQXoB4QDDA0ECAoCCwYEsAfIAggEAxAFAQ76B7wCGAAGDgoBBAUEAgIkBw4FBQMdBw4FDwcEDRMElAjoAQEOBggAETf2CNABBQABCC0CEgQaAQQEACYFBhMFDQQFBQMEHwIHAwUGIwAFBwAdAyIFBCEAAwMtBAMFBQYhAAEfAxwICBIBCgQMAwYGBQYNARMKdgUfBRAFUgEqCDcIOAAGCB4HEwUACRgCBAUEDgcGDAAAEQcFCNQGzAECFAgDMAALBwMEIQADCwTYBzoOAAQFDQE=';
+function vecCanvas(){const W=728,H=904,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+ g.fillStyle='#fff';g.fillRect(0,0,W,H);const b=Uint8Array.from(atob(VEC),ch=>ch.charCodeAt(0));let i=0;
+ const rv=()=>{let v=0,s=0,x;do{x=b[i++];v|=(x&127)<<s;s+=7}while(x&128);return v>>>0},zz=v=>(v>>>1)^-(v&1);
+ for(let L=0;L<VEC_TONES.length;L++){const n=rv(),t=Math.round(255*VEC_TONES[L]/228);g.fillStyle=`rgb(${t},${t},${t})`;
+  for(let k=0;k<n;k++){const m=rv();let x=0,y=0;g.beginPath();for(let j=0;j<m;j++){x+=zz(rv());y+=zz(rv());j?g.lineTo(x,y):g.moveTo(x,y)}g.closePath();g.fill()}}
+ return c}
+const YL=[8,8,15,15,13,11,15,16,16,16,17,16,17,18,18,17,15,15,14,14,13,12,12,11,10,10,10,9,9,8,8,8,7,7,5,5,8,8,5,3,2,2,0,1,1,2,1,1,1,1,1,1,1,2,2,3,4,5,7,7,11,11,11,11,9,8,7,4,2,1,1,6,8,8,9,10,11,11,11,11,15,16,19,20,20,20,21,21,22,22,22,22,23,23,22,23,23,23,22,22,22,22,21,21,21,22,22,22,23,23,23,23,23,24,24,26,26,25,24,24,23,23,23,23,24,24,24,25,25,24,24,25,25,26,26,27,28,30,31,30,30,30,30,31,32,32,32,34,34,33,33,33,33,31,28,28,30,30,32,33,35,38,37,37,36,37,37,38,41,44,46,48,49,52,54,55,56,56,54,53,53,54,54,54,54,54,54,53,53,52,52];
+
+/* ---------- URL params ---------- */
+const Q=new URLSearchParams(location.search), qn=(k,d)=>Q.has(k)?+Q.get(k):d;
+const EMBED=Q.get('embed')!=='0',     // 拜拜 build: embed on by default (?embed=0 shows the full UI)
+ HUD=!EMBED&&Q.get('hud')!=='0', SPEED=qn('speed',1);
+let KEY=Q.has('key')?+Q.get('key'):0;           // 1..7 jump to a key period (debug)
+const WAVE0=qn('wave',1), QLV=Q.has('q')?+Q.get('q'):-1;
+
+/* ---------- clock & astronomy (low precision, ~1 deg) ---------- */
+const LAT=25.23*Math.PI/180, LON=121.64, D2R=Math.PI/180;
+let simMs=Date.now(); {const d=Q.get('date'),t=Q.get('t');
+ if(d||t){const now=new Date(),base=d?new Date(d+'T00:00:00+08:00'):new Date(now.toLocaleDateString('en-CA',{timeZone:'Asia/Taipei'})+'T00:00:00+08:00');
+  if(t){const[h,m]=t.split(':').map(Number);simMs=base.getTime()+(h*60+(m||0))*6e4}else simMs=base.getTime()+(now.getTime()-new Date(now.toLocaleDateString('en-CA',{timeZone:'Asia/Taipei'})+'T00:00:00+08:00').getTime())}}
+function altAz(ra,dec,d){const gmst=(280.46061837+360.98564736629*d)%360,H=(gmst+LON)*D2R-ra;
+ const alt=Math.asin(Math.sin(LAT)*Math.sin(dec)+Math.cos(LAT)*Math.cos(dec)*Math.cos(H));
+ const az=Math.atan2(-Math.sin(H),Math.tan(dec)*Math.cos(LAT)-Math.sin(LAT)*Math.cos(H));return[alt/D2R,((az/D2R)+360)%360]}
+function sky(ms){const d=ms/864e5+2440587.5-2451545,e=(23.439-3.6e-7*d)*D2R;
+ const g=(357.529+.98560028*d)*D2R,q=280.459+.98564736*d,Ls=(q+1.915*Math.sin(g)+.02*Math.sin(2*g))*D2R;
+ const sun=altAz(Math.atan2(Math.cos(e)*Math.sin(Ls),Math.cos(Ls)),Math.asin(Math.sin(e)*Math.sin(Ls)),d);
+ const Lm=218.316+13.176396*d,M=(134.963+13.064993*d)*D2R,F=(93.272+13.22935*d)*D2R;
+ const lam=(Lm+6.289*Math.sin(M))*D2R,bet=5.128*Math.sin(F)*D2R;
+ const ra=Math.atan2(Math.sin(lam)*Math.cos(e)-Math.tan(bet)*Math.sin(e),Math.cos(lam)),dec=Math.asin(Math.sin(bet)*Math.cos(e)+Math.cos(bet)*Math.sin(e)*Math.sin(lam));
+ const moon=altAz(ra,dec,d),el=((lam-Ls)/D2R%360+360)%360;
+ return{sa:sun[0],saz:sun[1],ma:moon[0],maz:moon[1],phase:el/360,illum:(1-Math.cos(el*D2R))/2}}
+
+/* key periods (sun alt, moon alt) matching the confirmed seven stills */
+const KEYS=[null,[8,-10,'日落前'],[2,-10,'夕陽將落'],[-.3,-10,'夕陽半沉'],[-2.5,-10,'餘暉'],[-6,-10,'藍調'],[-12,3,'月出'],[-18,40,'月夜']];
+
+/* ---------- light state: the one force everything reads ---------- */
+const ss=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)}, lerp=(a,b,t)=>a+(b-a)*t;
+function lightState(s){
+ const a=s.sa, HZ=340, R=30;
+ // C plan: sun always at x 375. Above the sea: 8.125 px per degree (8deg -> y 245, 2deg -> y 294).
+ // Touching the sea it sinks over ~0.6 deg so the half-sunk moment lasts a few real minutes.
+ const sunY=Math.max(70,a>=0?HZ-R-a*8.125:HZ-R-a*(2*R/.6));
+ const sink=Math.min(1,Math.max(0,(sunY+R-HZ)/(2*R)));
+ const sunVis=sunY-R<HZ?1:0;
+ const warm=ss(14,4,a)*ss(-5,-1,a);          // golden/sunset warmth
+ const glow=ss(3,-.5,a)*ss(-6,-2.5,a);       // afterglow on clouds and horizon
+ const blue=ss(-2.5,-5,a)*ss(-11,-7,a);      // blue hour
+ const night=ss(-4,-10,a);
+ const mUp=ss(-1,1.5,s.ma), moonY=Math.max(60,HZ-19-Math.max(0,s.ma)*4.8);
+ const refl=sunVis*(1-sink*.6)*ss(16,6,a);   // reflection strongest when the sun is low
+ const red=ss(25,2,a);           // pale/white high in the sky, warming below ~25 deg, vermilion near the horizon
+ return{red,sunY,sink,stretch:1+.16*ss(0,1,sink),squash:1-.08*ss(0,1,sink),sunVis,warm,glow,blue,night,
+  moonY,moonVis:mUp*(.35+.65*ss(-3,-8,a)),illum:s.illum,refl,name:''}}
+function periodName(a,ma){return a>4?'日落前':a>0?'夕陽將落':a>-.6?'夕陽半沉':a>-4?'餘暉':a>-8?'藍調':ma>0?(ma<15?'月出':'月夜'):'夜'}
+
+/* ---------- WGSL ---------- */
+const WGSL=`
+struct U{a:vec4f,b:vec4f,c:vec4f,d:vec4f,e:vec4f,f:vec4f,g:vec4f};
+@group(0)@binding(0) var<uniform> u:U;
+@group(0)@binding(1) var prof:texture_2d<f32>;
+struct SP{bb:vec4f,n:vec4f,d:array<vec4f,48>};
+@group(0)@binding(2) var<uniform> sp:SP;
+@group(0)@binding(3) var vtex:texture_2d<f32>;
+@group(0)@binding(4) var vsm:sampler;
+struct BT{b:array<vec4f,12>,fish:vec4f};
+@group(0)@binding(5) var<uniform> bt:BT;
+@vertex fn vs(@builtin(vertex_index) i:u32)->@builtin(position) vec4f{
+ let p=array(vec2f(-1.,-3.),vec2f(-1.,1.),vec2f(3.,1.));return vec4f(p[i],0.,1.);}
+fn h2(p:vec2f)->f32{return fract(sin(dot(p,vec2f(127.1,311.7)))*43758.5453);}
+fn vn(p:vec2f)->f32{let i=floor(p);let f=fract(p);let w=f*f*(3.-2.*f);
+ return mix(mix(h2(i),h2(i+vec2f(1.,0.)),w.x),mix(h2(i+vec2f(0.,1.)),h2(i+vec2f(1.,1.)),w.x),w.y);}
+fn ridge(x:f32)->f32{ // y of the Yehliu skyline in design px (340 = horizon)
+ let n=f32(textureDimensions(prof).x);let fi=clamp((x-430.)/4.4,0.,n-1.);
+ let i0=u32(floor(fi));let i1=min(i0+1u,u32(n-1.));
+ let h=mix(textureLoad(prof,vec2u(i0,0u),0).r,textureLoad(prof,vec2u(i1,0u),0).r,fract(fi))*56.;
+ return 340.-max(h,2.2)*1.265;}
+fn sdBox(p:vec2f,c:vec2f,h:vec2f)->f32{let d=abs(p-c)-h;return length(max(d,vec2f(0.)))+min(max(d.x,d.y),0.);}
+fn fill(d:f32)->f32{return 1.-smoothstep(-.6,.6,d);}
+fn vor(p:vec2f)->vec3f{ // x: dist to nearest cell centre, y: 2nd, z: cell id
+ let i=floor(p);var d1=9.;var d2=9.;var id=0.;
+ for(var y=-1;y<=1;y++){for(var x=-1;x<=1;x++){let g=vec2f(f32(x),f32(y));let c=i+g;let o=vec2f(h2(c),h2(c+17.3));
+  let d=length(g+o-fract(p));if(d<d1){d2=d1;d1=d;id=h2(c+3.1);}else if(d<d2){d2=d;}}}
+ return vec3f(d1,d2,id);}
+// ---- grey-box scene objects (design px, measured from the final stills) ----
+fn sdSeg(p:vec2f,a:vec2f,b:vec2f)->f32{let pa=p-a;let ba=b-a;let h=clamp(dot(pa,ba)/dot(ba,ba),0.,1.);return length(pa-ba*h);}
+fn sdTrap(p:vec2f,r1:f32,r2:f32,he:f32)->f32{let k1=vec2f(r2,he);let k2=vec2f(r2-r1,2.*he);let q=vec2f(abs(p.x),p.y);
+ let ca=vec2f(q.x-min(q.x,select(r2,r1,q.y<0.)),abs(q.y)-he);let cb=q-k1+k2*clamp(dot(k1-q,k2)/dot(k2,k2),0.,1.);
+ let sg=select(1.,-1.,cb.x<0.&&ca.y<0.);return sg*sqrt(min(dot(ca,ca),dot(cb,cb)));}
+// one bow-on boat in local units (w = beam); returns vec2(ink coverage, window/paper coverage)
+fn boatSD(l:vec2f,w:f32,kind:f32)->vec3f{
+ let h=w*select(.32,.3,kind>1.5);
+ let hull=sdTrap(l-vec2f(0.,-h*.5),w*.5,w*.12,h*.5)*-1.;             // narrow keel (bottom) -> wide gunwale (top)
+ var ink=fill(-hull);var lite=0.;var shade=fill(-hull)*step(0.,l.x);
+ if(kind<1.5){
+  let cw=w*select(.5,.46,kind<.5);let ch=w*select(.3,.36,kind<.5);
+  ink=max(ink,fill(sdBox(l,vec2f(0.,-h-ch*.5),vec2f(cw*.5,ch*.5))));
+  lite=fill(sdBox(vec2f(abs(l.x),l.y),vec2f(cw*.28,-h-ch*.66),vec2f(cw*.1,ch*.11)));
+  let mh=w*select(.65,.85,kind<.5);
+  ink=max(ink,fill(sdSeg(l,vec2f(0.,-h-ch),vec2f(0.,-h-ch-mh))-.55));
+  ink=max(ink,fill(sdSeg(l,vec2f(-w*.22,-h-ch-mh*.7),vec2f(w*.22,-h-ch-mh*.7))-.4));
+  if(kind<.5){ink=max(ink,fill(sdSeg(l,vec2f(0.,-h-ch-mh*.9),vec2f(-w*.46,-h))-.3));}
+ } else {                                                             // sampan: low canopy + pole
+  ink=max(ink,fill(length((l-vec2f(0.,-h))*vec2f(1.,1.6))-w*.3)*step(l.y,-h));
+  ink=max(ink,fill(sdSeg(l,vec2f(w*.2,-h),vec2f(w*.42,-h-w*.75))-.5));}
+ return vec3f(ink,lite*(1.-0.),shade);}
+fn cloudBand(p:vec2f,tm:f32,k:f32,yc:f32,hh:f32)->f32{
+ let arc=12.*sin(p.x/(230.+50.*k)+k*1.3)+6.*sin(p.x/80.+k*2.);
+ let env=exp(-pow((p.y-yc-arc)/hh,2.));
+ let n=vn(vec2f((p.x+u.d.w*(4.+k*1.5))/90.+k*7.,p.y/14.))*.65+vn(vec2f(p.x/30.+k,p.y/6.))*.35;
+ return smoothstep(.5,.66,n*env+.25*env);}
+@fragment fn fs(@builtin(position) fc:vec4f)->@location(0) vec4f{
+ let res=u.a.xy; let tm=u.a.z; let s=u.g.x;
+ var vmask=0.;
+ let p0=vec2f((fc.x-res.x*.5)/s+u.g.y, fc.y/s-u.g.z); let p=p0+vec2f(u.e.x*.05,0.); // sky layer
+ let pF=p0+vec2f(u.e.x*.2,0.); let pM=p0+vec2f(u.e.x*.55,0.); let pN=p0+vec2f(u.e.x,0.);
+ let sunY=u.b.x; let sunVis=u.b.y; let moonY=u.b.z; let moonVis=u.b.w;
+ let warm=u.c.x; let glow=u.c.y; let blue=u.c.z; let night=u.c.w;
+ let refl=u.d.x; let wave=u.d.y; let illum=u.d.z; let stretch=u.a.w; let squash=u.e.y;
+ let HZ=340.;
+ // palette (paper/ink day -> indigo night)
+ let paper=vec3f(.945,.913,.847);
+ let indi=vec3f(.25,.29,.35);
+ var col=mix(paper,indi,night*.85);
+ col=mix(col,vec3f(.55,.6,.66),blue*.55*(1.-night*.5));
+ // sky
+ if(p.y<HZ){
+  let top=clamp(1.-p.y/170.,0.,1.);
+  col=mix(col,mix(vec3f(.44,.49,.55),vec3f(.12,.16,.22),night),top*(.22+.5*night));
+  let hg=exp(-pow((p.y-HZ)/95.,2.))*exp(-pow((p.x-375.)/420.,2.));
+  col=mix(col,vec3f(.93,.80,.63),hg*(.35*warm+.5*glow)*(1.-night));
+  col=mix(col,vec3f(.93,.63,.48),hg*.22*glow*(1.-night));
+  // stars
+  let st=h2(floor(p*.5));
+  if(st>.9975 && p.y<HZ-60.){let id=floor(p*.5);let f=.25+2.2*h2(id+7.);let dep=.15+.6*h2(id+9.);
+   let fl=vn(vec2f(tm*f,h2(id)*100.));let spk=pow(vn(vec2f(tm*.37,h2(id+3.)*50.)),10.)*.6;
+   let mag=.35+.65*h2(id+5.);
+   col=mix(col,vec3f(.97,.95,.89),night*clamp(mag*(1.-dep+dep*fl)+spk,0.,1.)*pow(clamp((300.-p.y)/130.,0.,1.),1.4));}
+  // cloud bands (gentle arcs); peach underside lit by low sun
+  var cl=0.;
+  cl=max(cl,cloudBand(p,tm,0.,60.,45.)*.55);cl=max(cl,cloudBand(p,tm,1.,120.,40.)*.4);cl=max(cl,cloudBand(p,tm,2.,175.,32.)*.45);
+  cl=max(cl,cloudBand(p,tm,3.,225.,26.)*.5);cl=max(cl,cloudBand(p,tm,4.,270.,20.)*.45);
+  let cloudC=mix(mix(vec3f(.43,.48,.53),vec3f(.15,.19,.25),night),vec3f(.9,.62,.48),glow*.35*step(150.,p.y)*(1.-night));
+  col=mix(col,cloudC,cl);
+  // moon (C plan, x 380) + halo
+  let md=length(p-vec2f(380.,moonY));
+  col=mix(col,vec3f(.77,.75,.7),moonVis*.45*exp(-max(md-19.,0.)/45.));
+  col=mix(col,vec3f(.97,.95,.89),moonVis*smoothstep(19.5,18.,md)*(.55+.45*illum));
+  // sun (C plan, x 375): circle in the sky, gradual small horizontal stretch once it touches the sea
+  let sd=length(vec2f((p.x-375.)/stretch,(p.y-sunY)/squash));
+  let red=u.f.z;                                             // 0 high sun (pale) .. 1 setting sun (vermilion)
+  let sunC=mix(mix(vec3f(.99,.97,.92),vec3f(.96,.78,.55),smoothstep(0.,.5,red)),vec3f(.753,.227,.141),smoothstep(.4,1.,red));
+  let haloC=mix(vec3f(.99,.98,.95),vec3f(.93,.63,.48),red);
+  col=mix(col,haloC,sunVis*mix(.55,.35,red)*exp(-max(sd-30.,0.)/mix(34.,22.,red)));
+  let disc=sunVis*smoothstep(30.5,29.,sd);
+  col=mix(col,sunC,disc*.93);
+  let veil=max(cloudBand(p,tm,3.,sunY-4.,5.),cloudBand(p,tm,5.,sunY+10.,4.))*smoothstep(.28,.62,vn(vec2f((p.x+u.d.w*6.)/9.,p.y/2.2))*.65+vn(vec2f((p.x+u.d.w*6.)/3.5,p.y/1.2))*.35);
+  col=mix(col,mix(vec3f(.97,.96,.93),vec3f(.97,.83,.72),red),disc*veil*.9);
+  vmask=max(vmask,disc*smoothstep(.0,.15,sunVis));   // the sun keeps its own colour (veiled = pale peach, never paper white)
+  // Yehliu (traced), base melting into mist
+  let ry=ridge(pF.x);
+  if(pF.x>426. && p.y>ry){let dpt=clamp((p.y-ry)/max(HZ-ry,4.),0.,1.);
+   let land=mix(vec3f(.30,.32,.35),vec3f(.12,.15,.2),night);
+   col=mix(col,land,(1.-smoothstep(.4,1.05,dpt+.2*(vn(pF*vec2f(.15,.5))-.5)))*(.62+.25*night));}
+ } else {
+  // sea
+  let dy=p.y-HZ;
+  col=mix(col,mix(vec3f(.72,.75,.78),vec3f(.17,.21,.28),night),.35+.3*dy/200.);
+  // sun reflection: widened column (42+1.3*dy)*stretch, vermilion near the sun, apricot/paper below
+  let cw=(42.+1.3*dy)*stretch;
+  let lx=(p.x-375.)/cw;
+  let rh=min(2.+dy*.03,4.);let row=floor(p.y/rh);let fy=fract(p.y/rh);
+  let sway=(vn(vec2f(row*.7,tm*1.3))-.5)*(4.+dy*.25)*(.6+.4*wave);
+  let gx=(p.x+sway)/min(6.+dy*.2,16.)+h2(vec2f(row,3.))*9.;
+  let dash=smoothstep(.5+.07*wave,.62+.07*wave,vn(vec2f(gx,row*1.7+floor(tm*7.))))*(1.-pow(abs(fy-.5)*2.,2.));
+  let core=exp(-lx*lx*2.);
+  col=mix(col,vec3f(.93,.80,.63),refl*core*.45);
+  let nearSun=smoothstep(70.,15.,dy)*smoothstep((40.+dy)*stretch,(18.+dy*.6)*stretch,abs(p.x-375.))*(.75+.25*vn(vec2f(p.x/9.,row)));
+  col=mix(col,mix(vec3f(.99,.93,.82),vec3f(.753,.227,.141),nearSun*.8*smoothstep(.45,1.,u.f.z)),refl*core*dash*.85);
+  // sea surface (auxiliary force = waves): perspective height field, no drawn lines
+  let z=70./max(dy,1.5);                                     // distance into the scene
+  let w=vec2f((pN.x-480.)*z*.02,z*5.);
+  var hh=vn(w*vec2f(1.,2.6)+vec2f(u.e.z*.25,u.e.w*.35))*.5;
+  hh+=vn(w*vec2f(2.2,5.5)+vec2f(-u.e.z*.4,u.e.w*.6))*.3;
+  hh+=vn(w*vec2f(4.8,11.)+vec2f(u.e.z*.7,u.e.w))*.2;
+  hh=mix(hh,hh*.75+vn(vec2f(pN.x/26.+u.e.z*.6,p.y/2.6+u.e.w*.5))*.25,smoothstep(80.,190.,dy));
+  let amp=(.55+.45*wave)*clamp(dy/160.,.12,1.);            // calmer and finer toward the horizon
+  let skyHi=mix(vec3f(.9,.88,.84),vec3f(.5,.55,.62),night);
+  col=mix(col,col*.8,smoothstep(.46,.22,hh)*amp*.55);      // troughs
+  col=mix(col,skyHi,smoothstep(.6,.86,hh)*amp*.5);         // crests catch the sky
+  // only near crests break into white water, more with the wave level
+  col=mix(col,vec3f(.97,.95,.9),smoothstep(.86-.04*wave,.92,hh)*(1.-smoothstep(.92,.98,hh))*smoothstep(90.,190.,dy)*(.25+.2*wave));
+  // sea detail away from the light paths: wind slicks, cat's-paw ripple streaks, scattered glints
+  let slk=vn(vec2f(pN.x/260.+u.e.z*.02,z*1.1+3.));
+  col=mix(col,col*.9,smoothstep(.55,.75,slk)*.6);                       // darker wind patches
+  col=mix(col,mix(vec3f(.86,.85,.82),vec3f(.4,.45,.53),night),smoothstep(.35,.18,slk)*.35);   // glassy slicks reflecting the sky
+  {let rr=min(1.6+dy*.025,4.);let rw=floor(p.y/rr);let ry2=fract(p.y/rr);
+   let rx=(pN.x+u.e.z*(2.+dy*.04))/min(5.+dy*.16,22.)+h2(vec2f(rw,11.))*13.;
+   let st=smoothstep(.6,.72,vn(vec2f(rx,rw*1.3)))*(1.-pow(abs(ry2-.5)*2.,1.5))*smoothstep(.45,.6,slk+.1);
+   col=mix(col,col*.72,st*(.35+.25*wave)*clamp(dy/120.,.25,1.));          // ripple streaks (ink)
+   let gl=smoothstep(.83,.9,vn(vec2f(rx*1.7,rw*2.1+floor(tm*5.))))*(1.-pow(abs(ry2-.5)*2.,2.));
+   let lc=mix(vec3f(.98,.94,.86),vec3f(.9,.92,.96),night);
+   let srcK=max(refl*exp(-pow((p.x-375.)/(160.+dy*2.),2.)),moonVis*exp(-pow((p.x-380.)/(110.+dy*1.4),2.)));
+   col=mix(col,lc,gl*srcK*.55);}                                          // stray glints spreading from the paths
+  // moon path
+  let ml=(p.x-380.)/(5.+dy*.35);
+  let md2=smoothstep(.55,.68,vn(vec2f((p.x+sway)/min(4.+dy*.15,12.)+h2(vec2f(row,7.))*9.,row*1.9+floor(tm*6.))))*(1.-pow(abs(fy-.5)*2.,2.));
+  col=mix(col,vec3f(.97,.95,.89),moonVis*exp(-ml*ml)*md2*.9*clamp((HZ-moonY)/120.,.35,1.));
+ }
+ // sea-highway fishing lights (x 200-428 on the horizon): boats by day, paper lights by night
+ {let bx=pF.x-18.;let nf=smoothstep(.45,.85,night);
+  if(nf>0.&&abs(pF.y-338.)<16.){col=mix(col,vec3f(.8,.82,.84),nf*exp(-pow((pF.y-337.)/5.,2.))*.28*smoothstep(0.,30.,bx)*smoothstep(440.,400.,bx));}
+  if(nf>0.&&bx>0.&&bx<412.&&abs(pF.x-153.)>6.&&abs(pF.y-338.)<16.){let LC=vec3f(.99,.97,.9);
+   // boats: one every ~9 px, each a cluster of a main lamp and side lamps, size and brightness vary
+   let c=floor(bx/7.);
+   for(var j=-2;j<=2;j++){let cc=c+f32(j);if(h2(vec2f(cc,4.))<.1){continue;}
+    let cx=18.+cc*7.+h2(vec2f(cc,3.))*5.;let sz=.8+pow(h2(vec2f(cc,11.)),2.)*1.6;let fl=.75+.25*sin(tm*(.6+h2(vec2f(cc,9.))*1.4)+cc);
+    let d=length((pF-vec2f(cx,338.3))*vec2f(1.,1.5));
+    col=mix(col,LC,nf*fl*(fill(d-.9*sz)+exp(-d*d/(5.*sz*sz))*.6));                      // main lamp + halo
+    for(var k=0;k<2;k++){let o=vec2f((h2(vec2f(cc,f32(k)+20.))-.5)*5.*sz,-.3-h2(vec2f(cc,f32(k)+30.))*1.4);
+     col=mix(col,LC,nf*fill(length(pF-vec2f(cx,338.3)-o)-.4)*.8*step(.35,h2(vec2f(cc,f32(k)+40.))));}
+    if(h2(vec2f(cc,17.))>.78){col=mix(col,LC,nf*fl*exp(-d*d/36.)*.45);}                 // a few big light-luring boats bloom
+    // short broken reflection
+    let rr=exp(-abs(pF.x-cx)/(.7*sz))*step(339.,pF.y)*exp(-max(pF.y-339.,0.)/(2.2*sz))*step(.4,vn(vec2f(pF.y*1.3,tm*3.+cc)));
+    col=mix(col,LC,nf*fl*rr*.45);}
+   // far tiny points between them
+   let c2=floor(bx/3.1);let cx2=18.+c2*3.1+h2(vec2f(c2,8.))*2.;let d2=length((pF-vec2f(cx2,338.8))*vec2f(1.,1.5));
+   col=mix(col,LC,nf*fill(d2-.45)*(.3+.5*h2(vec2f(c2,5.)))*(.6+.4*sin(tm*(.5+h2(vec2f(c2,6.)))+c2)));
+   // a soft glow band over the whole fleet (light pollution of the fishing grounds)
+   }}
+ // horizon line
+ col=mix(col,col*.8,exp(-pow((p.y-HZ)/.8,2.))*.6);
+ let ink=mix(vec3f(.15,.14,.13),vec3f(.06,.08,.11),night);
+ let lit=mix(vec3f(.62,.6,.57),vec3f(.28,.32,.38),night);
+ // MOORED BOATS at the left end of the breakwater: bow-on, rocking on six axes (CPU), waterline + faint reflection
+ {let q=pM;if(q.x>-20.&&q.x<150.&&q.y>330.&&q.y<420.){
+  let bink=mix(vec3f(.17,.16,.15),vec3f(.1,.12,.16),night);let blit=mix(vec3f(.5,.48,.45),vec3f(.28,.32,.4),night);
+  for(var i=0;i<6;i++){let A=bt.b[i*2];let B=bt.b[i*2+1];
+   let c=cos(B.x);let sn=sin(B.x);var l=q-A.xy;l=vec2f(c*l.x+sn*l.y,-sn*l.x+c*l.y);l=l/vec2f(B.z,B.y);
+   if(abs(l.x)>A.z*1.2||l.y<-A.z*2.4||l.y>A.z*.9){continue;}
+   let h=A.z*select(.32,.3,A.w>1.5);let wl=-h*.32;
+   if(l.y<wl){let r=boatSD(l,A.z,A.w);col=mix(col,mix(blit,bink,.55+.45*r.z),r.x*.92);col=mix(col,mix(vec3f(.6,.58,.55),vec3f(.3,.34,.42),night),r.y*r.x);
+    // moonlit rim on the boat's upper edges so the silhouette reads against the night sea
+    vmask=max(vmask,clamp(r.x*1.2,0.,1.)*night);
+    let rU=boatSD(l+vec2f(0.,1.2),A.z,A.w);col=mix(col,vec3f(.55,.6,.68),night*clamp(r.x-rU.x,0.,1.)*.7);
+    let LW=vec3f(.99,.96,.88);let ch=A.z*select(.3,.36,A.w<.5);let mh=A.z*select(.65,.85,A.w<.5);
+    if(A.w<1.5){
+     // every boat: a small anchor light at the masthead
+     let ad=length(l-vec2f(0.,-h-ch-mh));col=mix(col,LW,night*(fill(ad-.9)+exp(-ad/4.)*.25));
+     if(B.w>.5){                                                     // the lit boat: main deck lamp + cabin windows + work light
+      let md=length(l-vec2f(0.,-h-ch-mh*.55));col=mix(col,LW,night*(fill(md-1.6)+exp(-md/10.)*.45));
+      col=mix(col,LW,night*r.y*.95);                                 // lit cabin windows
+      let wd=length(l-vec2f(A.z*.32,-h-ch*.2));col=mix(col,LW,night*(fill(wd-.8)+exp(-wd/6.)*.3));}}}
+   else{let rl=vec2f(l.x+sin(l.y*1.6+tm*2.)*.8,2.*wl-l.y);let r=boatSD(rl,A.z,A.w);col=mix(col,bink,r.x*.14*exp(-(l.y-wl)/14.));
+    if(B.w>.5){let sx=l.x+sin(l.y*.9+tm*2.3)*1.4;col=mix(col,vec3f(.99,.96,.88),night*exp(-abs(sx)/1.6)*exp(-(l.y-wl)/7.)*step(.5,vn(vec2f(l.y*.8,tm*3.)))*.35);}
+    let r2=boatSD(l,A.z,A.w);col=mix(col,bink,r2.x*.16);}
+   // waterline ripples hugging the hull
+   let wlL=fill(abs(l.y-wl)-.5)*step(abs(l.x),A.z*.6)+fill(abs(l.y-wl-1.6)-.35)*step(abs(l.x),A.z*.5)*.6;
+   col=mix(col,mix(vec3f(.86,.84,.8),vec3f(.5,.55,.62),night),wlL*.4);}}}
+ // JUMPING FISH inside the harbour (CPU schedules one roughly every 16 s)
+ {let f=bt.fish;if(f.z>0.&&f.z<1.){let q=pM;let t=f.z;let span=26.*f.w;
+   let pos=vec2f(f.x+span*t,f.y-sin(t*3.1416)*14.*f.w);let dir=normalize(vec2f(span,-cos(t*3.1416)*14.*f.w*3.1416));
+   var lq=q-pos;lq=vec2f(dot(lq,dir),dot(lq,vec2f(-dir.y,dir.x)));
+   let body=fill(length(lq*vec2f(1.,2.6))-3.*f.w)+fill(sdSeg(lq,vec2f(-3.*f.w,0.),vec2f(-5.*f.w,-1.6*f.w))-.6)+fill(sdSeg(lq,vec2f(-3.*f.w,0.),vec2f(-5.*f.w,1.6*f.w))-.6);
+   col=mix(col,mix(vec3f(.17,.16,.15),vec3f(.1,.12,.16),night),clamp(body,0.,1.)*.9);
+   for(var k=0;k<2;k++){let rp=select(vec2f(f.x+span,f.y),vec2f(f.x,f.y),k==0);let rt=select(t-.85,t,k==0)*1.4;if(rt>0.&&rt<1.){
+    let rr=length((q-rp)*vec2f(.5,2.2))-(1.+rt*8.)*f.w;col=mix(col,vec3f(.97,.95,.9),fill(abs(rr)-.45)*(1.-rt)*.8);}}}}
+ // LEFT: red lighthouse x153 (tower y318-364, lamp y311) on a row of round-head tetrapods (y362, x8-258)
+ {let q=pM;
+  var m=0.;for(var i=0;i<59;i++){let cx=-400.+f32(i)*10.;if(abs(q.x-cx)>12.){continue;}let gr=clamp((40.-cx)/150.,0.,1.);   // nearer the shore: larger, lower
+   m=max(m,fill(length((q-vec2f(cx,361.+gr*6.+h2(vec2f(f32(i),1.))*2.))*vec2f(1.,1.25))-(4.8+gr*2.2)));}
+  let bwY=366.+clamp((40.-q.x)/150.,0.,1.)*7.;
+  m=max(m,fill(sdBox(q,vec2f(-117.5,bwY),vec2f(302.5,3.+clamp((40.-q.x)/150.,0.,1.)*3.))));
+  col=mix(col,ink*1.25,m*.9);
+  let tw=mix(4.,2.8,clamp((364.-q.y)/46.,0.,1.));
+  let t=fill(sdBox(q,vec2f(153.,341.),vec2f(tw,23.)));
+  let g=fill(sdBox(q,vec2f(153.,317.),vec2f(6.,1.4)));let lan=fill(sdBox(q,vec2f(153.,312.),vec2f(2.8,4.)));
+  col=mix(col,ink*1.1,max(max(t,g),lan)*.9);
+  // red lamp: night only (colour spot #1 at night)
+  let ld=length(q-vec2f(153.,311.));
+  let ph=fract(tm/4.);let fl=.35+.65*smoothstep(0.,.06,ph)*(1.-smoothstep(.12,.3,ph));
+  col=mix(col,vec3f(.753,.227,.141),night*(fill(ld-2.4)*(.6+.4*fl)+exp(-ld/7.)*.45*fl));
+  // its flicker on the water below the breakwater
+  col=mix(col,vec3f(.753,.227,.141),night*fl*.12*exp(-abs(q.x-153.)/1.5)*step(372.,q.y)*exp(-max(q.y-372.,0.)/14.));
+  // faint broken reflection of the tower below the breakwater
+  {let ry=372.+(372.-q.y);let rx=q.x+(vn(vec2f(q.y/2.,tm*1.2))-.5)*2.5;
+   let rt=fill(sdBox(vec2f(rx,q.y),vec2f(153.,393.),vec2f(3.2,21.)))*step(372.,q.y)*smoothstep(.35,.6,vn(vec2f(rx/3.,q.y/1.6+tm)));
+   col=mix(col,ink*1.3,rt*.12*(1.-smoothstep(372.,416.,q.y)));}}
+ if(u.f.y<.5){  // legacy procedural right side (kept as fallback when vector data is off)
+ // RIGHT (near layer): breakwater, tetrapod pile, green lighthouse
+ {let q=pN;
+  let edge=397.+(q.x-775.)*49./190.;           // seaward edge of the deck
+  // deck: above the edge, from x 775 to frame right, back edge 8px above
+  let back=edge-14.-(q.x-775.)*.05;                 // back (landward) edge of the deck
+  let deck=smoothstep(775.,777.,q.x)*step(q.y,edge)*step(back,q.y);
+  let dt=clamp((q.y-back)/max(edge-back,1.),0.,1.);   // 0 back -> 1 seaward
+  var dc=mix(vec3f(.6,.58,.55),vec3f(.26,.3,.35),night)*(.92+.12*dt)*(.94+.1*vn(q/vec2f(10.,2.)));
+  dc=mix(dc,ink,exp(-pow((fract((q.x-775.)/38.)-.02)*38./.8,2.))*.35);        // transverse joints
+  // contact shadow / AO under the tower base, cast toward the camera (light from behind)
+  let ybA=back+(edge-back)*.45;let ao=exp(-pow((q.x-846.)/46.,2.))*step(ybA,q.y)*(1.-smoothstep(ybA,ybA+12.,q.y));
+  dc=mix(dc,ink*1.2,ao*.55);
+  let shx=q.x-(866.+(q.y-ybA)*1.6);let shC=step(ybA,q.y)*smoothstep(4.,-4.,abs(shx)-18.)*(1.-smoothstep(ybA,ybA+26.,q.y));
+  dc=mix(dc,ink*1.25,shC*.45*(1.-night*.5));
+  col=mix(col,dc,deck);
+  // seaward face below the edge: darker, wet toward the waterline
+  let wlB=458.+(q.x-700.)*.62;
+  let face=smoothstep(775.,777.,q.x)*step(edge,q.y)*smoothstep(wlB+1.,wlB-1.,q.y);
+  col=mix(col,ink*mix(1.5,1.,clamp((q.y-edge)/40.,0.,1.)),face*.9);
+  // end face of the breakwater (x 765-775): darkest plane, a lit top corner
+  let ef=step(765.+(q.y-back)*.15,q.x)*step(q.x,776.)*step(back+2.,q.y)*step(q.y,min(edge+30.,wlB));
+  col=mix(col,ink*.85,ef*.95);
+  col=mix(col,mix(vec3f(.9,.85,.78),vec3f(.5,.55,.62),night),fill(length((q-vec2f(775.,397.))*vec2f(1.,1.6))-2.)*.7);
+  col=mix(col,mix(vec3f(.85,.8,.73),vec3f(.42,.47,.55),night),fill(abs(q.y-back)-.5)*smoothstep(765.,780.,q.x)*.5);   // back edge catches light
+  // tetrapod pile: top outline x690->y470, x760->y402, then just under the edge to the right
+  // pile = blocks above the top outline; the SEA SURFACE cuts the pile: the left tip of the trapezoid is submerged
+  var top=470.+(q.x-690.)*(402.-470.)/70.;
+  if(q.x>760.){top=max(402.,edge+6.);}
+  let wl=458.+(q.x-700.)*.62;                         // waterline along the pile front (lower on screen as it nears the camera)
+  let wv=u.d.y;
+  let sw=(.5+.5*sin(tm*(1.1+.25*wv)-q.x*.045+vn(vec2f(q.x/40.,tm*.2))*3.))*(2.5+wv*3.5);   // swash run-up
+  let wlS=wl-sw;                                       // instantaneous waterline
+  let dw=wlS-q.y;                                      // + above water (in air), - below
+  if(q.y>top&&q.x>600.){
+   let v=vor(q/vec2f(22.,18.));let cell=smoothstep(.06,.18,v.y-v.x);
+   let shade=mix(.65,1.25,v.z)*(1.-.35*smoothstep(.0,.5,v.x));
+   let rim=smoothstep(.6,.2,v.x)*step(.55,v.z)*.25;
+   let a=smoothstep(0.,3.,(q.y-top)*.72);
+   var pc=mix(ink*.6,ink*shade+lit*rim,cell);
+   let wet=1.-smoothstep(2.,22.,dw);                   // blocks just above the water are wet and lighter
+   pc=mix(pc,mix(lit*.95,lit*.7,v.x),wet*.4*cell*step(0.,dw));
+   let seaC=mix(vec3f(.66,.69,.72),vec3f(.2,.24,.3),night);
+   pc=mix(pc,seaC,(1.-cell)*wet*.6*step(0.,dw));      // sea showing in the gaps near the waterline
+   // under water: only a pale submerged shadow of the blocks
+   let under=smoothstep(.5,-1.5,dw);
+   // under water the sea already drawn stays as is (no grey patch); only a faint ink ghost of the blocks,
+   // fading with depth, with distance, and quickly toward the left beyond the middle of the submerged edge
+   let lx=smoothstep(690.,800.,q.x);
+   let vis=exp(dw/7.)*smoothstep(450.,545.,q.y)*lx*lx;
+   col=mix(col,pc,a*.95*(1.-under));
+   col=mix(col,ink*1.6,under*a*.18*cell*vis);
+   // foam: on the waterline where the blocks pierce the water, broken, riding up and back
+   let fb=exp(-pow((dw+.5)/(1.4+wv*.6),2.))*smoothstep(.32,.58,vn(vec2f(q.x/7.,tm*.8)))*a;
+   col=mix(col,vec3f(.97,.95,.9),fb);
+   // foam left in the gaps above the line after each wave
+   col=mix(col,vec3f(.97,.95,.9),(1.-cell)*smoothstep(sw+5.,0.,dw)*step(0.,dw)*smoothstep(.55,.78,vn(q/vec2f(5.,3.)+vec2f(0.,tm*.3)))*a);}
+  // backwash line in front of the pile and the waterline itself (also left of the tip)
+  {let bw=exp(-pow((q.y-(wl+3.+sw*.4))/1.,2.))*smoothstep(.45,.7,vn(vec2f(q.x/11.+3.,tm*.5)))*step(660.,q.x)*.65;
+   col=mix(col,vec3f(.97,.95,.9),bw);
+   col=mix(col,ink*1.4,exp(-pow((q.y-wlS-2.5)/1.,2.))*step(top,q.y)*.25);}
+  // green lighthouse (centre x845): tower y162-386 width~44, base 803-886 y386-398,
+  // gallery 806-882 y151-158, top rail y140, lantern 828-862 y120-142, roof 823-867 y106-120, spire to y95
+  let wob=(vn(vec2f(q.y/40.,5.))-.5)*1.6;                       // hand-drawn lean
+  let tw=mix(22.,19.,clamp((386.-q.y)/224.,0.,1.))+(vn(vec2f(q.y/7.,1.))-.5)*2.2;   // brushy edge
+  let tower=fill(sdBox(q-vec2f(wob,0.),vec2f(845.,274.),vec2f(tw,112.)));
+  let uu=clamp((q.x-845.-wob)/tw,-1.,1.);
+  let streak=smoothstep(.5,.85,vn(vec2f((q.x-845.)/2.2,q.y/55.)));   // dry vertical strokes
+  // light from the upper left: lit left, shadow on the right, graded top -> foot
+  let lam=clamp(.55-.75*uu+.35*sqrt(max(0.,1.-uu*uu)),0.,1.);          // lambert-ish for a cylinder lit from front-left
+  let vgr=1.-.35*clamp((q.y-162.)/224.,0.,1.);                          // top brighter, foot darker
+  var cyl=mix(ink*.85,lit*1.05,lam*vgr)*(1.-.1*streak);
+  cyl=mix(cyl,ink*.8,smoothstep(.55,1.,uu)*.45);                       // core shadow on the right edge
+  cyl=mix(cyl,ink*.85,exp(-max(q.y-158.,0.)/14.)*step(158.,q.y)*.55*(.6+.4*smoothstep(-1.,.4,uu)));   // gallery casts down
+  // uneven, broken segment bands
+  let bph=fract((q.y-162.+(vn(vec2f(q.x/9.,2.))-.5)*4.)/44.);
+  cyl=mix(cyl,ink,exp(-pow((bph-.5)*44./4.,2.))*.12);   // very soft tonal joints
+  let edgeL=exp(-pow((uu+.8)/.14,2.))*.25;    // soft highlight on the lit (left) edge
+  var tc=mix(cyl,lit*1.15,edgeL);
+  tc=mix(tc,mix(vec3f(.8,.78,.74),vec3f(.3,.34,.4),night),smoothstep(352.,394.,q.y)*.35*(.6+.8*vn(q/vec2f(6.,3.))));   // foot melts into spray mist
+  col=mix(col,tc,tower);
+  let rgh=(vn(q*.35)-.5)*1.6;
+  let bTop=fill(sdBox(q,vec2f(844.5,388.),vec2f(41.5,2.4))+rgh*.5);
+  let yb=back+(edge-back)*.45;                     // where the base meets the deck (deck slopes down to the right)
+  let bFront=fill(max(sdBox(vec2f(q.x,390.),vec2f(844.5,390.),vec2f(41.5,1.)),max(390.-q.y,q.y-yb))+rgh);
+  col=mix(col,mix(lit*.9,ink*1.05,smoothstep(805.,885.,q.x)),bFront);            // front face: dark left, lighter right
+  col=mix(col,mix(vec3f(.7,.67,.62),vec3f(.32,.36,.42),night),bTop);            // top face catches sky light
+  col=mix(col,ink*.8,fill(abs(q.x-803.5)-1.2)*step(386.,q.y)*step(q.y,yb));
+  col=mix(col,ink*1.05,exp(-pow((q.y-yb)/1.3,2.))*step(803.,q.x)*step(q.x,886.)*.7);   // contact line on the deck   // dark left edge
+  col=mix(col,ink*1.1,exp(-pow((q.y-385.5)/1.2,2.))*step(823.,q.x)*step(q.x,867.)*.6);  // AO where the tower meets the base
+  col=mix(col,ink,fill(sdBox(q,vec2f(844.,154.5+(vn(vec2f(q.x/12.,4.))-.5)*1.2),vec2f(38.,3.5))+rgh*.7));
+  // railing: top rail + posts
+  let rail=fill(sdBox(q,vec2f(844.,140.5+(vn(vec2f(q.x/10.,6.))-.5)*1.4),vec2f(37.,.8+.5*vn(vec2f(q.x/4.,1.)))))+fill(sdBox(vec2f(fract((q.x-806.)/9.5)*9.5+(h2(vec2f(floor((q.x-806.)/9.5),2.))-.5)*1.6,q.y),vec2f(4.7,145.5),vec2f(.6,5.5)))*step(806.,q.x)*step(q.x,882.)*step(.2,h2(vec2f(floor((q.x-806.)/9.5),5.)));
+  col=mix(col,ink,clamp(rail,0.,1.)*.85);
+  let lanW=fill(sdBox(q,vec2f(845.,131.),vec2f(17.,11.)));
+  col=mix(col,mix(vec3f(.93,.9,.84),vec3f(1.,.94,.8),night),lanW);
+  col=mix(col,ink,lanW*fill(abs(q.x-845.)-.8)*.6);
+  col=mix(col,ink*.9,lanW*(exp(-max(q.y-120.,0.)/6.)*.5+smoothstep(.0,17.,q.x-845.)*.3)*(1.-night*.6));
+  let roof=fill(max(sdBox(q,vec2f(845.,113.),vec2f(22.,7.)),(q.x-845.)*.0+abs(q.x-845.)-22.+(120.-q.y)*1.0));
+  col=mix(col,ink,roof);
+  col=mix(col,ink,fill(sdBox(q,vec2f(845.,100.5),vec2f(.8,5.5))));
+     // ladder hint
+  // lantern glow at night (light faces the sea: glow only, no beam)
+  col=mix(col,vec3f(.99,.95,.86),night*exp(-length((q-vec2f(845.,131.))*vec2f(1.,1.3))/14.)*.45);}
+ }
+ // RIGHT side from vector ink layers (traced from the confirmed static mock): tower, breakwater, tetrapods
+ if(u.f.y>.5){let q=pN;
+  let qs=q;
+  let vuv=(qs-vec2f(596.,88.))/vec2f(364.,452.);
+  if(q.x>596.&&q.y>88.){
+   var vd=1.-textureSampleLevel(vtex,vsm,clamp(vuv,vec2f(0.),vec2f(.999)),0.).r;
+   // procedural breakwater with the same tones: deck (mid), face (dark), tetrapods (blocks with lit facets)
+   {let ye=397.+(q.x-775.)*.258;let yb=ye-14.-(q.x-775.)*.05;var vp=0.;
+    if(q.x>775.&&q.y>yb&&q.y<ye){vp=.62+.1*vn(vec2f(q.x/18.,q.y/3.))+.08*(vn(vec2f(q.x/3.,q.y))-.5)-.25*smoothstep(ye-4.,yb,q.y)*0.;}   // deck top (dark, like the trace)
+    if(q.x>775.&&q.y>=ye){let r=(q-vec2f(0.,ye))*vec2f(1.,1.)+vec2f(0.,-(q.x-775.)*.0);
+     // dark mass with irregular lit facets and mid-tone blocks, like the traced brushwork (no cell grid)
+     let n1=vn(r*vec2f(.07,.11)+vec2f(3.,7.));let n2=vn(r*vec2f(.16,.22)+vec2f(9.,1.));let n3=vn(r*vec2f(.45,.6));
+     vp=.8-.32*smoothstep(.6,.72,n1)*(.6+.4*n3)-.2*smoothstep(.62,.75,n2)+.06*(n3-.5);
+     vp=max(vp,exp(-pow((q.y-ye-1.5)/1.2,2.))*.8);}                                                       // dark lip under the deck edge
+    let bl=smoothstep(915.,960.,q.x+(vn(vec2f(q.y/12.,4.))-.5)*40.);
+    vd=mix(vd,vp,bl);}               // 0 paper .. ~.75 densest ink
+   let wv=u.d.y;
+   // waterline = toe of the pile, parallel to the breakwater (the blocks are laid along it)
+   let yw0=470.+(q.x-690.)*.258;
+   let swA=(.6+.8*vn(vec2f(q.x/55.,tm*.07)))*(1.+wv*1.6);           // run-up varies along the pile
+   let sw=(.5+.5*sin(tm*(1.1+.2*wv)-q.x*.05+vn(vec2f(q.x/30.,tm*.2))*4.))*swA;
+   let dy=(yw0-sw)-q.y;                                            // + above the water
+   let lowZone=step(400.,q.y)*step(686.,q.x);
+   let under=smoothstep(.4,-1.2,dy)*step(400.,q.y);
+   vd*=mix(1.,.16*exp(dy/5.)*smoothstep(686.,760.,q.x),under);
+   let wet=(1.-smoothstep(0.,9.,dy+sw*.6))*lowZone*(1.-under);      // wet band follows the highest run-up
+   vd*=1.-wet*.28;
+   let inkV=mix(vec3f(.13,.12,.11),vec3f(.05,.07,.1),night);
+   col=mix(col,inkV,clamp(vd*1.25,0.,1.));
+   vmask=smoothstep(.03,.12,vd)*(1.-under);
+   let foamC=vec3f(.97,.95,.9);
+   // thin, broken foam line exactly at the water's edge
+   let ln=exp(-pow((dy+.3)/(.55+wv*.2),2.))*smoothstep(.38,.6,vn(vec2f(q.x/4.,tm*.9)))*lowZone;
+   // a few bubbles / lace just above it, left by the retreating water
+   let bub=step(0.,dy)*step(dy,3.+sw)*smoothstep(.78,.9,vn(q*vec2f(.9,1.6)+vec2f(0.,tm*.4)))*lowZone*.8;
+   // second, older lace line a little lower (where the previous wave reached)
+   let ln2=exp(-pow((dy+2.2+.8*sin(q.x*.11+tm*.7))/.45,2.))*smoothstep(.45,.65,vn(vec2f(q.x/5.,tm*.5+7.)))*lowZone*.6;
+   // foam pockets caught between blocks, and short drips running down wet faces
+   let pock=step(0.,dy)*step(dy,6.+sw)*smoothstep(.72,.82,vn(q*vec2f(.35,.5)+vec2f(3.,tm*.15)))*(1.-smoothstep(.0,6.,dy))*lowZone*.7;
+   let drip=step(0.,dy)*step(dy,8.)*exp(-abs(fract(q.x/5.3+h2(vec2f(floor(q.x/5.3),2.)))-.5)*16.)*step(.7,h2(vec2f(floor(q.x/5.3),5.)))*(1.-dy/8.)*lowZone*.45;
+   let fo=clamp(ln+bub+ln2+pock+drip,0.,1.);col=mix(col,foamC,fo);vmask*=1.-fo;
+   // harbour wavelets: thin, irregular, parallel to the toe, running in and whitening only at the very edge
+   let dw=q.y-yw0;
+   if(dw>0.&&dw<22.&&q.x>680.){let k=dw/6.5-tm*(.3+.08*wv)+vn(vec2f(q.x/40.,1.))*1.5;let ph=fract(k);
+    let crest=exp(-pow((ph-.5)*6.5/.45,2.))*(1.-dw/22.)*smoothstep(.42,.62,vn(vec2f(q.x/7.,floor(k)*1.7)));
+    col=mix(col,mix(vec3f(.25,.25,.27),vec3f(.08,.1,.14),night),crest*.18);
+    col=mix(col,foamC,crest*smoothstep(6.,0.,dw)*.6);}}
+  // lantern: glass stays paper; soft glow at night (light faces the sea: no beam)
+  let on=smoothstep(.35,.75,blue+night);                          // lamp switches on during the blue hour
+  let ph=fract(tm/5.3);let fl=smoothstep(0.,.05,ph)*(1.-smoothstep(.1,.32,ph));   // a flash every ~5 s
+  let LC=vec3f(.99,.95,.86);
+  let inGlass=step(828.,q.x)*step(q.x,862.)*step(120.,q.y)*step(q.y,142.);
+  let gx=(q.x-828.)/34.;let gy=(q.y-120.)/22.;
+  // --- unlit (day / dusk): backlit glass, grey by day, dark warm by dusk with a warm sliver on the sun-side pane ---
+  let dusk=clamp(warm*1.2+glow,0.,1.)*(1.-night);
+  var glassC=mix(vec3f(.45,.46,.48),vec3f(.3,.28,.27),dusk);
+  glassC=mix(glassC,mix(vec3f(.58,.59,.61),vec3f(.66,.46,.3),dusk),smoothstep(.22,.04,gx)*(.35+.4*vn(vec2f(q.y*.4,3.))));
+  glassC=mix(glassC,glassC*.6,exp(-pow((gx-.36)*34./.9,2.))+exp(-pow((gx-.68)*34./.9,2.)));   // two mullions
+  // --- lit (night): dim core (lamp faces the sea), brighter at the flash ---
+  let litC=mix(vec3f(.4,.39,.37),LC,.15+.85*fl);
+  col=mix(col,mix(glassC,litC,on),inGlass*.96);vmask=max(vmask,inGlass);
+  // B: light leaking at the glass frame and roof underside, broken and uneven (lit) / thin rim on the sun side (unlit)
+  let brk=smoothstep(.3,.55,vn(vec2f((q.x+q.y)*.12,7.)))*(.45+.55*vn(vec2f(q.x*.35,q.y*.35)));
+  let fw=.7+.9*vn(vec2f(q.x*.2,q.y*.2+5.));
+  let frame=(exp(-pow((q.y-120.)/fw,2.))+exp(-pow((q.y-142.5)/fw,2.)))*step(826.,q.x)*step(q.x,864.)+(exp(-pow((q.x-828.)/fw,2.))+exp(-pow((q.x-862.)/(fw*1.3),2.)))*step(119.,q.y)*step(q.y,143.);
+  let eave=exp(-pow((q.y-119.5)/.9,2.))*step(821.,q.x)*step(q.x,869.);
+  let bRim=clamp(frame+eave*.7,0.,1.)*brk;
+  col=mix(col,LC,on*bRim*(.6+.4*fl));vmask=max(vmask,on*bRim);
+  // unlit sun-side rim: roof left slope, lantern left frame, gallery left corner, tower left edge
+  let roofL=exp(-abs((q.y-106.)-(845.-q.x)*.64+.0)/1.)*step(823.,q.x)*step(q.x,845.)*step(96.,q.y)*step(q.y,121.);
+  let towL=exp(-pow((q.x-824.5)/1.,2.))*step(162.,q.y)*step(q.y,380.)*.6;
+  let uRim=clamp(roofL+exp(-pow((q.x-828.)/.8,2.))*step(120.,q.y)*step(q.y,142.)+exp(-pow((q.x-806.5)/.8,2.))*step(140.,q.y)*step(q.y,158.)+towL,0.,1.)*brk;
+  col=mix(col,mix(vec3f(.62,.62,.6),vec3f(.98,.62,.32),dusk),(1.-on)*uRim*mix(.3,.65,dusk));vmask=max(vmask,(1.-on)*uRim*dusk);
+  // C: halo in the sea mist and two short uneven light wings thrown out past the tower (night only)
+  let lp=q-vec2f(845.,131.);
+  let halo=exp(-dot(lp*vec2f(1.,1.5),lp*vec2f(1.,1.5))/(900.+900.*fl));
+  let wy=abs(lp.y)/(7.+abs(lp.x)*.07);let wl=select(85.,100.,lp.x>0.);
+  let wing=step(16.,abs(lp.x))*exp(-wy*wy)*(1.-smoothstep(wl*.5,wl,abs(lp.x)))*(.65+.35*vn(vec2f(lp.x*.06,tm*.5)));
+  let cA=on*clamp(halo*.6+wing*.45,0.,1.)*(.75+.5*fl)*(1.-inGlass);
+  col=mix(col,LC,cA);vmask=max(vmask,cA);
+  // D: at the flash, the middle of the railing (in front of the burst) turns into a dark silhouette
+  let rx=fract((q.x-806.)/9.5);let post=exp(-pow((rx-.5)*9.5/.7,2.))*step(140.,q.y)*step(q.y,151.)+exp(-pow((q.y-140.5)/.9,2.));
+  let mid=smoothstep(818.,830.,q.x)*(1.-smoothstep(860.,872.,q.x));
+  let back=on*fl*mid*step(139.,q.y)*step(q.y,152.);
+  col=mix(col,LC*.95,back*.55);                                                       // the burst lights the gallery behind the rail
+  col=mix(col,vec3f(.08,.09,.12),back*clamp(post,0.,1.)*.9);vmask=max(vmask,back);}
+  // spray: droplets simulated on the CPU (irregular bursts); here only drawn, inside their bounding box
+ {let q=pN;if(q.x>sp.bb.x&&q.x<sp.bb.z&&q.y>sp.bb.y&&q.y<sp.bb.w){var dk=0.;var wt=0.;let n=i32(sp.n.x);
+  for(var i=0;i<48;i++){if(i>=n){break;}let dd=sp.d[i];let al=fill(length(q-dd.xy)-abs(dd.z))*dd.w;
+   if(dd.z<0.){dk=max(dk,al);}else{wt=max(wt,al);}}
+  col=mix(col,ink*1.1,dk*.85);col=mix(col,vec3f(.97,.95,.9),wt);}}
+ // paper grain
+ col*=1.+(h2(fc.xy)-.5)*.05;
+ return vec4f(col,1.-vmask);
+}`;
+
+const INK=`
+struct U{a:vec4f,b:vec4f,c:vec4f,d:vec4f,e:vec4f,f:vec4f,g:vec4f};
+@group(0)@binding(0) var<uniform> u:U;
+@group(0)@binding(2) var src:texture_2d<f32>;
+@group(0)@binding(3) var smp:sampler;
+@vertex fn vs(@builtin(vertex_index) i:u32)->@builtin(position) vec4f{
+ let p=array(vec2f(-1.,-3.),vec2f(-1.,1.),vec2f(3.,1.));return vec4f(p[i],0.,1.);}
+fn h2(p:vec2f)->f32{return fract(sin(dot(p,vec2f(127.1,311.7)))*43758.5453);}
+fn vn(p:vec2f)->f32{let i=floor(p);let f=fract(p);let w=f*f*(3.-2.*f);
+ return mix(mix(h2(i),h2(i+vec2f(1.,0.)),w.x),mix(h2(i+vec2f(0.,1.)),h2(i+vec2f(1.,1.)),w.x),w.y);}
+// seal glyph strokes shared with 竹/海 (謝 0-20, 鈺 21-33, 豐 34-50, 香 51-60) + 港 61-75
+const GS=array<vec4f,76>(vec4f(-0.55,-0.68,-0.48,-0.58),vec4f(-0.72,-0.48,-0.36,-0.48),vec4f(-0.66,-0.3,-0.42,-0.3),vec4f(-0.66,-0.14,-0.42,-0.14),vec4f(-0.68,0.04,-0.68,0.44),vec4f(-0.4,0.04,-0.4,0.44),vec4f(-0.68,0.04,-0.4,0.04),vec4f(-0.68,0.44,-0.4,0.44),vec4f(0.02,-0.68,-0.08,-0.56),vec4f(-0.2,-0.52,-0.2,0.22),vec4f(0.18,-0.52,0.18,0.62),vec4f(-0.2,-0.52,0.18,-0.52),vec4f(-0.2,-0.28,0.18,-0.28),vec4f(-0.2,-0.04,0.18,-0.04),vec4f(-0.28,0.3,0.24,0.1),vec4f(0.04,0.22,-0.26,0.6),vec4f(0.18,0.62,0.08,0.54),vec4f(0.3,-0.3,0.76,-0.3),vec4f(0.6,-0.68,0.6,0.62),vec4f(0.6,0.62,0.48,0.54),vec4f(0.4,-0.06,0.48,0.08),vec4f(-0.406,-0.679,-0.718,-0.312),vec4f(-0.406,-0.679,-0.094,-0.312),vec4f(-0.624,-0.257,-0.187,-0.257),vec4f(-0.663,0,-0.148,0),vec4f(-0.406,-0.257,-0.406,0.663),vec4f(-0.585,0.234,-0.507,0.39),vec4f(-0.226,0.234,-0.304,0.39),vec4f(-0.718,0.679,-0.094,0.679),vec4f(0.117,-0.585,0.702,-0.585),vec4f(0.172,0.023,0.647,0.023),vec4f(0.078,0.679,0.741,0.679),vec4f(0.406,-0.585,0.406,0.679),vec4f(0.53,0.312,0.624,0.468),vec4f(-0.702,-0.574,-0.702,-0.028),vec4f(-0.702,-0.028,0.702,-0.028),vec4f(0.702,-0.574,0.702,-0.028),vec4f(-0.328,-0.73,-0.328,-0.106),vec4f(0.328,-0.73,0.328,-0.106),vec4f(-0.53,-0.597,-0.125,-0.597),vec4f(-0.53,-0.379,-0.125,-0.379),vec4f(0.125,-0.597,0.53,-0.597),vec4f(0.125,-0.379,0.53,-0.379),vec4f(-0.624,0.105,0.624,0.105),vec4f(-0.39,0.229,0.39,0.229),vec4f(-0.39,0.229,-0.39,0.448),vec4f(0.39,0.229,0.39,0.448),vec4f(-0.39,0.448,0.39,0.448),vec4f(-0.273,0.526,-0.172,0.651),vec4f(0.273,0.526,0.172,0.651),vec4f(-0.702,0.729,0.702,0.729),vec4f(-0.351,-0.624,0.312,-0.718),vec4f(-0.663,-0.468,0.663,-0.468),vec4f(0,-0.718,0,-0.062),vec4f(0,-0.39,-0.585,-0.094),vec4f(0,-0.39,0.585,-0.094),vec4f(-0.484,0.078,0.484,0.078),vec4f(-0.484,0.718,0.484,0.718),vec4f(-0.484,0.078,-0.484,0.718),vec4f(0.484,0.078,0.484,0.718),vec4f(-0.484,0.39,0.484,0.39),vec4f(-0.64,-0.62,-0.52,-0.5),vec4f(-0.68,-0.22,-0.56,-0.1),vec4f(-0.7,0.62,-0.5,0.2),vec4f(-0.05,-0.72,-0.05,-0.22),vec4f(0.4,-0.72,0.4,-0.22),vec4f(-0.22,-0.56,0.58,-0.56),vec4f(-0.28,-0.22,0.66,-0.22),vec4f(0.05,-0.12,-0.28,0.1),vec4f(0.3,-0.12,0.68,0.1),vec4f(-0.12,0.1,0.42,0.1),vec4f(0.42,0.1,0.42,0.36),vec4f(-0.12,0.36,0.42,0.36),vec4f(-0.12,0.1,-0.12,0.6),vec4f(-0.12,0.6,0.62,0.6),vec4f(0.62,0.6,0.62,0.48));
+fn gsd(q:vec2f,a:u32,n:u32)->f32{var d=9.;var gs=GS;for(var j=a;j<a+n;j++){let S=gs[j];let pa=q-S.xy;let ba=S.zw-S.xy;let hh=clamp(dot(pa,ba)/dot(ba,ba),0.,1.);d=min(d,length(pa-ba*hh));}return d;}
+fn sealC(q:vec2f,ab:vec2f,sd:f32,d:f32,sw:f32,zhu:f32,aa:f32)->f32{
+ let e=q/ab;let r=length(e);let th=atan2(e.y,e.x);
+ let wob=1.+.035*sin(3.*th+sd)+.025*sin(5.*th+2.*sd)+.02*sin(9.*th+.7)+.025*(vn(q*2.2+sd)-.5)-step(.82,vn(q*7.+sd*3.))*.025;
+ let ins=1.-smoothstep(wob-aa,wob+aa,r);
+ let st=1.-smoothstep(sw-aa,sw+aa,d+(vn(q*13.+sd)-.5)*.016);
+ var c=ins*(1.-st);
+ if(zhu>.5){let rim=smoothstep(wob-.14/max(ab.x,ab.y)-aa,wob-.14/max(ab.x,ab.y)+aa,r);c=ins*max(rim,st);}
+ return c*(1.-step(.86,vn(q*30.+sd))*step(.55,vn(q*2.5+sd)));}
+fn lum(c:vec3f)->f32{return dot(c,vec3f(.3,.55,.15));}
+fn L(uv:vec2f)->f32{return lum(textureSampleLevel(src,smp,uv,0.).rgb);}
+@fragment fn fs(@builtin(position) fc:vec4f)->@location(0) vec4f{
+ let res=u.a.xy; let uv=fc.xy/res; let s=u.g.x; let night=u.c.w;
+ let c4=textureSampleLevel(src,smp,uv,0.); let c=c4.rgb; let pre=1.-c4.a;
+ if(u.f.x<.5){return vec4f(c,1.);}                     // Realistic/Ink toggle
+ // design coords anchored to the near layer (strokes do not slide with the handscroll)
+ let p=vec2f((fc.x-res.x*.5)/s+u.g.y+u.e.x, fc.y/s-u.g.z);
+ let l=lum(c);
+ // ---- five ink tones with soft steps ----
+ let t=clamp((1.-l)*1.08-.04,0.,1.);                    // darkness
+ let k=t*4.; let fk=fract(k); let tq=(floor(k)+smoothstep(.3,.7,fk))/4.;
+ var dn=mix(t,tq,.6);
+ dn*=smoothstep(.06,.16,t);                              // pale washes -> blank paper (sky, water, mist)
+ // graded tones (淡、次淡、中、次濃、濃) instead of a straight ramp to black
+ dn=pow(dn,1.25)*.78;
+ // wet-wash layering: ink pools and thins inside a mass, anchored to the scene
+ dn*=.8+.38*vn(p*vec2f(.035,.09))+.12*(vn(p*vec2f(.2,.5))-.5);
+ // ---- ink bleeding along paper fibres: darkness spreads a little into the paper ----
+ let ang=vn(p*vec2f(.02,.06))*6.283;let dir=vec2f(cos(ang),sin(ang)*.35)/res*s;
+ var bl=0.;for(var i=1;i<=6;i++){let o=dir*f32(i)*1.6;bl+=max(0.,1.-L(uv+o)-dn)+max(0.,1.-L(uv-o)-dn);}
+ dn=min(1.,dn+bl/12.*mix(.2,.5,smoothstep(300.,330.,p.y))*(.6+.8*vn(p*.15)));
+ // ---- edge strokes from luminance discontinuities, width varies like brush pressure ----
+ let px=vec2f(1.,1.)/res*s*(1.1+1.3*vn(p*vec2f(.05,.012)));   // pressure along the stroke
+ let gx=L(uv+vec2f(px.x,0.))-L(uv-vec2f(px.x,0.)); let gy=L(uv+vec2f(0.,px.y))-L(uv-vec2f(0.,px.y));
+ let gx2=L(uv+vec2f(px.x*2.2,0.))-L(uv-vec2f(px.x*2.2,0.)); let gy2=L(uv+vec2f(0.,px.y*2.2))-L(uv-vec2f(0.,px.y*2.2));
+ let g=max(length(vec2f(gx,gy)),length(vec2f(gx2,gy2))*.7);
+ // where strokes are allowed: never in the sky (clouds stay washes); only on objects up there
+ let inTower=step(796.,p.x)*step(p.x,894.)*step(88.,p.y);
+ let inLeftLH=step(132.,p.x-u.e.x*.45)*step(p.x-u.e.x*.45,174.)*step(296.,p.y);
+ let skyOK=step(600.,p.x)*step(372.,p.y)*(1.-inTower);            // strokes only on the near breakwater & tetrapods
+ let seaK=1.;
+ let dry=smoothstep(.55,.85,vn(p*vec2f(.6,.2)));                   // occasional flying white only
+ let stroke=smoothstep(.1,.28,g)*(1.-.35*dry)*smoothstep(.0,.25,1.-l*.9)*skyOK*seaK;
+ let lmax=max(max(L(uv+vec2f(px.x*2.,0.)),L(uv-vec2f(px.x*2.,0.))),max(L(uv+vec2f(0.,px.y*2.)),L(uv-vec2f(0.,px.y*2.))));
+ let foamEdge=step(345.,p.y)*smoothstep(.84,.92,lmax)*smoothstep(.06,.0,lmax-l-.35+.35);   // edge of white water
+ let white=smoothstep(.1,.28,g)*step(345.,p.y)*smoothstep(.84,.92,lmax)*smoothstep(.0,.25,1.-l*.9);
+ dn=max(dn,(stroke-white)*.9);
+ dn*=1.-white*.85;
+ // ---- colour: keep vermilion and a little warmth; everything else becomes ink on paper ----
+ let paperC=mix(vec3f(.95,.925,.87),vec3f(.62,.65,.7),night*.9);
+ let inkC=mix(vec3f(.12,.105,.095),vec3f(.06,.075,.1),night);
+ var o=mix(paperC,inkC,dn);
+ let verm=smoothstep(.22,.4,c.r-c.b)*smoothstep(.25,.42,c.r-c.g);
+ let warm=clamp((c.r-c.b)*2.2,0.,1.)*(1.-verm)*(1.-night);
+ o=mix(o,o*vec3f(1.03,.95,.86),warm*.5);                 // pale peach/apricot washes only
+ o=mix(o,vec3f(.753,.227,.141)*(.85+.15*l),verm);
+ // moonlit/lamp highlights stay as blank paper even at night
+ o=mix(o,vec3f(.97,.95,.9),smoothstep(.82,.95,l)*night);
+ o=mix(o,vec3f(.97,.95,.9),white*.8);                   // foam / spray strokes in white
+ // pre-inked vector areas keep their traced tones (only tinted to the paper/night palette)
+ o=mix(o,mix(c,c*vec3f(1.,.985,.95),1.-night),pre);
+ // ---- seal group A (same as 竹/海): theme seal 港 (white text) + 謝鈺豐 (white text) + 香 (red text), right side ----
+ if(u.g.w>.01){let asp=res.x/res.y;let P0=vec2f(uv.x*asp,uv.y);let gx=u.f.w;let SC=u.g.w;let P=vec2f(gx,.62)+(P0-vec2f(gx,.62))/SC;let pxs=1./res.y/SC;let k=.74;var cov=0.;
+  {let ss=.0625;let q=(P-vec2f(gx,.545))/ss;cov=max(cov,sealC(q,vec2f(.86,1.18),57.,gsd(q/.86,61u,15u)*.86,.075,0.,pxs/ss*1.5));}
+  {let ss=.0279;let q=(P-vec2f(gx-.025,.70))/ss;let d=min(min(gsd((q-vec2f(0.,-1.22))/k,0u,21u),gsd(q/k,21u,13u)),gsd((q-vec2f(0.,1.22))/k,34u,17u))*k;
+   cov=max(cov,sealC(q,vec2f(.98,2.12),21.,d,.062,0.,pxs/ss*1.5));}
+  {let ss=.0258;let q=(P-vec2f(gx+.031,.70))/ss;cov=max(cov,sealC(q,vec2f(.86,1.18),51.,gsd(q/.86,51u,10u)*.86,.082,1.,pxs/ss*1.5));}
+  o=mix(o,vec3f(.69,.17,.11)*(.93+.1*vn(P*400.)),cov*.92);}
+ // ---- paper grain & fibres over everything ----
+ let gr=(h2(fc.xy)-.5)*.045+(vn(p*vec2f(.08,1.2))-.5)*.04;
+ o*=1.+gr;
+ return vec4f(o,1.);}`;
+
+/* seal texture: white-text (glyph left as paper) on an irregular vermilion oval; drawn once with a system serif */
+function sealCanvas(){const c=document.createElement('canvas');c.width=112;c.height=128;const g=c.getContext('2d');
+ g.fillStyle='#c03a24';g.beginPath();for(let i=0;i<=48;i++){const a=i/48*6.283,r=1+Math.sin(a*5)*.025+Math.sin(a*11)*.015;g.lineTo(56+Math.cos(a)*50*r,64+Math.sin(a)*58*r)}g.fill();
+ g.globalCompositeOperation='destination-out';g.font='bold 70px "Kaiti TC","STKaiti","DFKai-SB","Songti TC","Noto Serif TC",serif';g.textAlign='center';g.textBaseline='middle';g.fillText('港',56,67);
+ const id=g.getImageData(0,0,112,128);for(let i=3;i<id.data.length;i+=4)if(id.data[i]>0&&Math.random()<.12)id.data[i]*=.4;g.putImageData(id,0,0);  // worn stamp
+ g.globalCompositeOperation='destination-over';g.fillStyle='rgba(244,236,220,1)';g.fillRect(0,0,112,128);   // glyph shows paper
+ g.globalCompositeOperation='destination-in';g.beginPath();g.ellipse(56,64,51,59,0,0,6.283);g.fill();return c}
+
+/* ---------- runtime ---------- */
+const cv=document.getElementById('cv'), hud=document.getElementById('hud');
+const QS=[.5,.75,1,1.5]; let qi=QLV>=0?QLV:1, dev,ctx,pipe,ubuf,bind,fmt,running=false,lastT=0,accT=0,frames=0,measureT=0,visible=true,raf=0;
+let VEC_ON=Q.get('vec')!=='0';let sbuf,bbuf;const uData=new Float32Array(28);const SEAL_ON=Q.get('seal')!=='0'; let INK_ON=Q.get('ink')!=='0', post,postBind,sceneTex,smp,sealTex;
+async function init(){
+ const ad=await navigator.gpu?.requestAdapter(); if(!ad) throw 0;
+ dev=await ad.requestDevice();
+ dev.lost.then(i=>{if(i.reason!=='destroyed'){running=false;cancelAnimationFrame(raf);retry()}});
+ ctx=cv.getContext('webgpu'); fmt=navigator.gpu.getPreferredCanvasFormat(); ctx.configure({device:dev,format:fmt,alphaMode:'opaque'});
+ const mod=dev.createShaderModule({code:WGSL});await chk(mod);
+ pipe=await dev.createRenderPipelineAsync({layout:'auto',vertex:{module:mod,entryPoint:'vs'},fragment:{module:mod,entryPoint:'fs',targets:[{format:fmt}]},primitive:{topology:'triangle-list'}});
+ ubuf=dev.createBuffer({size:uData.byteLength,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+ const vc=vecCanvas();const vtx=dev.createTexture({size:[vc.width,vc.height],format:'rgba8unorm',usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_DST|GPUTextureUsage.RENDER_ATTACHMENT});
+ dev.queue.copyExternalImageToTexture({source:vc},{texture:vtx},[vc.width,vc.height]);
+ const vsm=dev.createSampler({magFilter:'linear',minFilter:'linear'});
+ bbuf=dev.createBuffer({size:btData.byteLength,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+ sbuf=dev.createBuffer({size:spData.byteLength,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+ const tx=dev.createTexture({size:[YL.length,1],format:'r8unorm',usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_DST});
+ const pad=Math.ceil(YL.length/256)*256, raw=new Uint8Array(pad); YL.forEach((v,i)=>raw[i]=Math.round(v/56*255));
+ dev.queue.writeTexture({texture:tx},raw,{bytesPerRow:pad},[YL.length,1]);
+ bind=dev.createBindGroup({layout:pipe.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:ubuf}},{binding:1,resource:tx.createView()},{binding:2,resource:{buffer:sbuf}},{binding:3,resource:vtx.createView()},{binding:4,resource:vsm},{binding:5,resource:{buffer:bbuf}}]});
+ const pm=dev.createShaderModule({code:INK});await chk(pm);
+ post=await dev.createRenderPipelineAsync({layout:'auto',vertex:{module:pm,entryPoint:'vs'},fragment:{module:pm,entryPoint:'fs',targets:[{format:fmt}]},primitive:{topology:'triangle-list'}});
+ smp=dev.createSampler({magFilter:'linear',minFilter:'linear',addressModeU:'clamp-to-edge',addressModeV:'clamp-to-edge'});
+ resize();
+}
+function resize(){const r=Math.min((devicePixelRatio||1)*QS[qi],EMBED?1.5:2);cv.width=Math.max(2,Math.round(innerWidth*r));cv.height=Math.max(2,Math.round(innerHeight*r));
+ if(!post)return; sceneTex&&sceneTex.destroy();
+ sceneTex=dev.createTexture({size:[cv.width,cv.height],format:fmt,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});
+ postBind=dev.createBindGroup({layout:post.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:ubuf}},{binding:2,resource:sceneTex.createView()},{binding:3,resource:smp}]})}
+addEventListener('resize',()=>{if(dev)resize()});
+let cloudOff=0,waveOff=0,wavePh=0,waveCur=WAVE0, waveTgt=WAVE0, waveNext=0; const WAVE_FIX=Q.has('wave');
+function frame(now){
+ raf=requestAnimationFrame(frame);
+ if(!visible)return;
+ const dt=Math.min(.1,(now-lastT)/1000||0);
+ if(EMBED&&now-lastT<32)return;             // ~30 fps in embed mode
+ lastT=now; simMs+=dt*1000*SPEED;
+ cloudOff+=dt*(.6+.35*waveCur);waveOff+=dt*(.6+.35*waveCur);wavePh+=dt*(.6+.3*waveCur);
+ if(!WAVE_FIX){waveNext-=dt*SPEED;if(waveNext<=0){const r=Math.random();waveTgt=r<.35?0:r<.75?1:r<.93?2:3;waveNext=120+Math.random()*240}waveCur+=(waveTgt-waveCur)*Math.min(1,dt*SPEED*.02)}
+ let s=sky(simMs); if(KEY){const k=KEYS[KEY];s={...s,sa:k[0],ma:k[1],illum:1}}
+ const L=lightState(s);
+ if(!dragging){dragV*=Math.pow(.04,dt);dragOff+=dragV*dt;dragOff*=Math.pow(.92,dt)}   // inertia, then drift back slowly
+ dragOff=Math.max(-90,Math.min(90,dragOff));
+ const scroll=EMBED?0:Math.max(-110,Math.min(110,Math.sin(now/1000*2*Math.PI/240)*38+dragOff));   // slow handscroll pan + drag
+ uData.set([cv.width,cv.height,now/1000,L.stretch, L.sunY,L.sunVis,L.moonY,L.moonVis, L.warm,L.glow,L.blue,L.night, L.refl,waveCur,L.illum,cloudOff, scroll,L.squash,waveOff,wavePh, INK_ON?1:0,VEC_ON?1:0,L.red,0]);framing(cv.width,cv.height);
+ dev.queue.writeBuffer(ubuf,0,uData);
+ sprayStep(dt,waveCur);dev.queue.writeBuffer(sbuf,0,spData);boatsStep(dt,waveCur,now/1000);dev.queue.writeBuffer(bbuf,0,btData);
+ const enc=dev.createCommandEncoder();
+ let pass=enc.beginRenderPass({colorAttachments:[{view:sceneTex.createView(),loadOp:'clear',storeOp:'store',clearValue:[0,0,0,1]}]});
+ pass.setPipeline(pipe);pass.setBindGroup(0,bind);pass.draw(3);pass.end();
+ pass=enc.beginRenderPass({colorAttachments:[{view:ctx.getCurrentTexture().createView(),loadOp:'clear',storeOp:'store',clearValue:[0,0,0,1]}]});
+ pass.setPipeline(post);pass.setBindGroup(0,postBind);pass.draw(3);pass.end();dev.queue.submit([enc.finish()]);
+ // adaptive quality: measure 2 s, then step up/down
+ frames++;accT+=dt;measureT+=dt;
+ if(QLV<0&&measureT>2){const fps=frames/accT,target=EMBED?30:60;
+  if(fps<target*.85&&qi>0){qi--;resize()}else if(fps>target*.98&&qi<QS.length-1&&!EMBED){qi++;resize()}
+  frames=0;accT=0;measureT=0;if(HUD)hudFps=fps}
+ if(HUD&&hudOn)drawHud(s,L);
+}
+let hudFps=0;
+/* framing: 16:10 and wider keep the design height (540) and shift right so the lighthouse clears the seal group;
+   narrower boxes (down to 3:4 portrait) widen the view to ~600 design px and add sky on top (bottom stays at 540) */
+function framing(w,h){const a=w/h,t=Math.min(1,Math.max(0,(1.6-a)/(1.6-.75)));
+ const Wd=a>=1.6?540*a:864+(600-864)*t, s=a>=1.6?h/540:w/Wd, cx=EMBED?545+(630-545)*t:480, oy=h/s-540;
+ uData[24]=s;uData[25]=cx;uData[26]=Math.max(0,oy);
+ // seal group: right edge in wide boxes; in narrow boxes it sits just left of the lighthouse and is scaled down
+ const asp=a,towerL=((823-cx)*s+w/2)/w, def=asp-.03*asp-.0565, sc=a>=1.3?1:Math.max(.62,a/1.3);
+ uData[23]=a>=1.3?def:Math.min(def,towerL*asp-.07*sc);uData[27]=SEAL_ON?sc:0}
+/* drag / swipe to look left and right (design px); auto handscroll keeps running underneath */
+let dragOff=0,dragV=0,dragging=false,lastX=0,lastT2=0;
+if(!EMBED){cv.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastT2=performance.now();dragV=0;cv.setPointerCapture(e.pointerId);cv.classList.add('drag')});
+ cv.addEventListener('pointermove',e=>{if(!dragging)return;const k=540/innerHeight,dx=(e.clientX-lastX)*k,t=performance.now(),d=Math.max(1,t-lastT2);
+  dragOff-=dx;dragV=-dx/(d/1000)*.6+dragV*.4;lastX=e.clientX;lastT2=t});
+ const up=()=>{dragging=false;cv.classList.remove('drag')};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up)}
+/* moored boats: [x,y,beam,kind(0 mid,1 small,2 sampan),lamp]; six-axis rocking (sway, heave, roll, pitch, yaw, surge) */
+const BOATS=[[24,394,38,0,0],[55,390,22,1,1],[76,393,22,2,0],[103,392,33,0,0],[128,388,20,1,0],[6,389,19,1,0]].map((b,i)=>({b,ph:[...Array(6)].map(()=>Math.random()*6.28),f:[.37,.53,.71,.29,.19,.43].map(v=>v*(.8+Math.random()*.4))}));
+const btData=new Float32Array(52);let fishT=-1,fishNext=6+Math.random()*10;
+function boatsStep(dt,wv,t){const k=.5+.45*wv;
+ BOATS.forEach((o,i)=>{const[x,y,w,kind,lamp]=o.b,s=(j)=>Math.sin(t*o.f[j]*6.28/3+o.ph[j]),sm=kind===2?1.5:kind===1?1.2:1;
+  const sway=s(0)*.6*k*sm,heave=s(1)*1.1*k*sm,roll=s(2)*.07*k*sm,pitch=1+s(3)*.04*k,yaw=1+s(4)*.05*k,surge=1+s(5)*.015*k;
+  btData.set([x+sway,y+heave,w,kind, roll,pitch*surge,yaw*surge,lamp],i*8)});
+ if(fishT<0){fishNext-=dt;if(fishNext<=0){fishT=0;btData.set([180+Math.random()*360,362+Math.random()*60,0,.4+Math.random()*.3],48);fishNext=10+Math.random()*12}}   // ~every 16 s on average
+ else{fishT+=dt/1.1;if(fishT>1.6)fishT=-1}btData[50]=fishT<0?-1:fishT}
+/* spray at the end of the tetrapod pile: irregular bursts (random gap, size, count, origin) */
+const SPR=[];let sprNext=1;const spData=new Float32Array(8+48*4);
+function sprayStep(dt,wv){sprNext-=dt;
+ if(sprNext<=0){const big=Math.pow(Math.random(),2.4),str=(.3+.75*big)*(.6+.2*wv),n=Math.round(8+26*big),ox=694+Math.pow(Math.random(),1.4)*240,oy=470+(ox-690)*.258;
+  for(let i=0;i<n;i++){const a=-1.15-(Math.random()-.5)*1.3,v=(30+Math.pow(Math.random(),.7)*120)*str,mist=Math.random()<.45;
+   SPR.push({x:ox+(Math.random()-.5)*10,y:oy-1.5,vx:Math.cos(a)*v*.55,vy:Math.sin(a)*v*.85,r:mist?.3+Math.random()*.4:.5+Math.random()*1.1,l:0,m:mist?.25+Math.random()*.35:.45+Math.random()*.7,dk:!mist&&Math.random()<.2,mist})}
+  if(SPR.length>48)SPR.splice(0,SPR.length-48);
+  sprNext=(Math.random()<.25?.15+Math.random()*.4:.6+Math.random()*3.2)/(.6+.4*wv)}   // sometimes back-to-back
+ let x0=1e4,y0=1e4,x1=-1e4,y1=-1e4,k=0;
+ for(let i=SPR.length-1;i>=0;i--){const p=SPR[i];p.l+=dt;if(p.l>p.m){SPR.splice(i,1);continue}p.vy+=170*dt;p.x+=p.vx*dt;p.y+=p.vy*dt}
+ for(const p of SPR){const a=(1-p.l/p.m)*(p.mist?.55:1),r=p.r*(1-p.l/p.m*.4);spData.set([p.x,p.y,p.dk?-r:r,a],8+k*4);k++;
+  x0=Math.min(x0,p.x-r-2);y0=Math.min(y0,p.y-r-2);x1=Math.max(x1,p.x+r+2);y1=Math.max(y1,p.y+r+2)}
+ spData.set([x0,y0,x1,y1,k,0,0,0],0)}
+/* ?shot=1 : render offscreen and show it via a 2D canvas (screenshot script / headless check) */
+const SHOT=Q.get('shot')==='1';
+async function shot(){const w=960,h=540,bpr=w*4;uData[0]=w;uData[1]=h;dev.queue.writeBuffer(ubuf,0,uData);
+ const t=dev.createTexture({size:[w,h],format:fmt,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC});
+ const b=dev.createBuffer({size:bpr*h,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+ const enc=dev.createCommandEncoder(),pass=enc.beginRenderPass({colorAttachments:[{view:t.createView(),loadOp:'clear',storeOp:'store',clearValue:[0,0,0,1]}]});
+ pass.setPipeline(pipe);pass.setBindGroup(0,bind);pass.draw(3);pass.end();enc.copyTextureToBuffer({texture:t},{buffer:b,bytesPerRow:bpr},[w,h]);dev.queue.submit([enc.finish()]);
+ await b.mapAsync(GPUMapMode.READ);const px=new Uint8ClampedArray(b.getMappedRange().slice(0));
+ if(fmt.startsWith('bgra'))for(let i=0;i<px.length;i+=4){const r=px[i];px[i]=px[i+2];px[i+2]=r}
+ const c2=document.createElement('canvas');c2.width=w;c2.height=h;c2.style.cssText='position:fixed;inset:0;width:100%;height:100%';c2.getContext('2d').putImageData(new ImageData(px,w,h),0,0);document.body.appendChild(c2);hud.style.display='none'}
+function drawHud(s,L){const d=new Date(simMs).toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false});
+ hud.firstChild.nodeValue=`${d}  ${KEY?KEYS[KEY][2]+'（鎖定）':periodName(s.sa,s.ma)}\n太陽 ${s.sa.toFixed(1)}° 方位 ${s.saz.toFixed(0)}°  月亮 ${s.ma.toFixed(1)}° 月相 ${(s.phase*100|0)}%\n暖 ${L.warm.toFixed(2)} 餘暉 ${L.glow.toFixed(2)} 藍調 ${L.blue.toFixed(2)} 夜 ${L.night.toFixed(2)} 倒影 ${L.refl.toFixed(2)} 拉寬 ${L.stretch.toFixed(2)}\n畫質 ${QS[qi]}  ${hudFps.toFixed(0)} fps  浪級 ${waveCur.toFixed(2)}\n`}
+function start(){running=true;lastT=performance.now();raf=requestAnimationFrame(frame);
+ if(EMBED&&matchMedia('(prefers-reduced-motion: reduce)').matches){setTimeout(()=>{cancelAnimationFrame(raf)},300)}
+ parent!==window&&parent.postMessage({mojing:'ready'},'*')}
+let tries=0;function retry(){if(++tries>3){lostMsg();return}setTimeout(()=>{post=null;init().then(start).catch(retry)},800*tries)}
+function lostMsg(){const n=document.getElementById('nogpu');n.children[2].textContent='繪圖裝置暫時中斷，請重新整理頁面。';n.children[3].textContent='';n.classList.remove('hide')}
+async function chk(m){if(!m.getCompilationInfo)return;const e=(await m.getCompilationInfo()).messages.filter(x=>x.type==='error');if(e.length){window.SHERR=e.map(x=>x.lineNum+':'+x.linePos+' '+x.message).join('\n');throw new Error('shader')}}
+function fail(){if(window.SHERR){const n=document.getElementById('nogpu');n.children[2].textContent='著色器錯誤（請截圖回報）';n.children[3].textContent=window.SHERR;n.children[3].style.cssText='white-space:pre-wrap;max-width:80vw;font:11px monospace'}document.getElementById('nogpu').classList.remove('hide');parent!==window&&parent.postMessage({mojing:'unsupported'},'*')}
+addEventListener('keydown',e=>{if(e.key==='i')INK_ON=!INK_ON});
+document.addEventListener('visibilitychange',()=>{visible=!document.hidden;lastT=performance.now()});
+if(EMBED&&'IntersectionObserver'in window)new IntersectionObserver(e=>{visible=e[0].isIntersecting&&!document.hidden;lastT=performance.now()}).observe(cv);
+let hudOn=Q.get('hud')==='1';
+if(HUD){hud.style.display=hudOn?'block':'none';hud.appendChild(document.createTextNode(''));
+ addEventListener('keydown',e=>{if(e.key==='h'||e.key==='H'){hudOn=!hudOn;hud.style.display=hudOn?'block':'none'}});
+ const bar=document.createElement('div');[[0,'即時'],...KEYS.slice(1).map((k,i)=>[i+1,k[2]])].forEach(([v,n])=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{KEY=v};bar.appendChild(b)});
+ const ib=document.createElement('button');ib.textContent='寫實／水墨';ib.onclick=()=>{INK_ON=!INK_ON};bar.appendChild(ib);
+ const w=document.createElement('button');w.textContent='浪級';w.onclick=()=>{waveTgt=waveCur=(Math.round(waveCur)+1)%4;waveNext=600};bar.appendChild(w);hud.appendChild(bar)}
+(async()=>{
+ if(!navigator.gpu)return fail();
+ const en=document.getElementById('enter'), skip=EMBED||Q.get('noenter')==='1';
+ if(!skip)en.classList.remove('hide');
+ try{await init()}catch(e){en.classList.add('hide');return fail()}
+ if(skip){start();cv.classList.add('on')} else document.getElementById('go').onclick=()=>{start();requestAnimationFrame(()=>{cv.classList.add('on');en.classList.add('out','hide')})};
+})();
+</script>
+</body>
+</html>

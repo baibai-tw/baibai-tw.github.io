@@ -104,7 +104,7 @@ function periodName(a,ma){return a>4?'日落前':a>0?'夕陽將落':a>-.6?'夕�
 
 /* ---------- WGSL ---------- */
 const WGSL=`
-struct U{a:vec4f,b:vec4f,c:vec4f,d:vec4f,e:vec4f,f:vec4f,g:vec4f};
+struct U{a:vec4f,b:vec4f,c:vec4f,d:vec4f,e:vec4f,f:vec4f,g:vec4f,h:vec4f};
 @group(0)@binding(0) var<uniform> u:U;
 @group(0)@binding(1) var prof:texture_2d<f32>;
 struct SP{bb:vec4f,n:vec4f,d:array<vec4f,48>};
@@ -161,7 +161,7 @@ fn cloudBand(p:vec2f,tm:f32,k:f32,yc:f32,hh:f32)->f32{
  let res=u.a.xy; let tm=u.a.z; let s=u.g.x;
  var vmask=0.;
  let p0=vec2f((fc.x-res.x*.5)/s+u.g.y, fc.y/s-u.g.z); let p=p0+vec2f(u.e.x*.05,0.); // sky layer
- let pF=p0+vec2f(u.e.x*.2,0.); let pM=p0+vec2f(u.e.x*.55,0.); let pN=p0+vec2f(u.e.x,0.);
+ let pF=p0+vec2f(u.e.x*.2,0.); let pM=p0+vec2f(u.e.x*.55-u.h.z,0.); let pN=p0+vec2f(u.e.x,0.);
  let sunY=u.b.x; let sunVis=u.b.y; let moonY=u.b.z; let moonVis=u.b.w;
  let warm=u.c.x; let glow=u.c.y; let blue=u.c.z; let night=u.c.w;
  let refl=u.d.x; let wave=u.d.y; let illum=u.d.z; let stretch=u.a.w; let squash=u.e.y;
@@ -175,7 +175,7 @@ fn cloudBand(p:vec2f,tm:f32,k:f32,yc:f32,hh:f32)->f32{
  if(p.y<HZ){
   let top=clamp(1.-p.y/170.,0.,1.);
   col=mix(col,mix(vec3f(.44,.49,.55),vec3f(.12,.16,.22),night),top*(.22+.5*night));
-  let hg=exp(-pow((p.y-HZ)/95.,2.))*exp(-pow((p.x-375.)/420.,2.));
+  let hg=exp(-pow((p.y-HZ)/95.,2.))*exp(-pow((p.x-u.h.x)/420.,2.));
   col=mix(col,vec3f(.93,.80,.63),hg*(.35*warm+.5*glow)*(1.-night));
   col=mix(col,vec3f(.93,.63,.48),hg*.22*glow*(1.-night));
   // stars
@@ -191,11 +191,11 @@ fn cloudBand(p:vec2f,tm:f32,k:f32,yc:f32,hh:f32)->f32{
   let cloudC=mix(mix(vec3f(.43,.48,.53),vec3f(.15,.19,.25),night),vec3f(.9,.62,.48),glow*.35*step(150.,p.y)*(1.-night));
   col=mix(col,cloudC,cl);
   // moon (C plan, x 380) + halo
-  let md=length(p-vec2f(380.,moonY));
+  let md=length(p-vec2f(u.h.y,moonY));
   col=mix(col,vec3f(.77,.75,.7),moonVis*.45*exp(-max(md-19.,0.)/45.));
   col=mix(col,vec3f(.97,.95,.89),moonVis*smoothstep(19.5,18.,md)*(.55+.45*illum));
   // sun (C plan, x 375): circle in the sky, gradual small horizontal stretch once it touches the sea
-  let sd=length(vec2f((p.x-375.)/stretch,(p.y-sunY)/squash));
+  let sd=length(vec2f((p.x-u.h.x)/stretch,(p.y-sunY)/squash));
   let red=u.f.z;                                             // 0 high sun (pale) .. 1 setting sun (vermilion)
   let sunC=mix(mix(vec3f(.99,.97,.92),vec3f(.96,.78,.55),smoothstep(0.,.5,red)),vec3f(.753,.227,.141),smoothstep(.4,1.,red));
   let haloC=mix(vec3f(.99,.98,.95),vec3f(.93,.63,.48),red);
@@ -216,14 +216,14 @@ fn cloudBand(p:vec2f,tm:f32,k:f32,yc:f32,hh:f32)->f32{
   col=mix(col,mix(vec3f(.72,.75,.78),vec3f(.17,.21,.28),night),.35+.3*dy/200.);
   // sun reflection: widened column (42+1.3*dy)*stretch, vermilion near the sun, apricot/paper below
   let cw=(42.+1.3*dy)*stretch;
-  let lx=(p.x-375.)/cw;
+  let lx=(p.x-u.h.x)/cw;
   let rh=min(2.+dy*.03,4.);let row=floor(p.y/rh);let fy=fract(p.y/rh);
   let sway=(vn(vec2f(row*.7,tm*1.3))-.5)*(4.+dy*.25)*(.6+.4*wave);
   let gx=(p.x+sway)/min(6.+dy*.2,16.)+h2(vec2f(row,3.))*9.;
   let dash=smoothstep(.5+.07*wave,.62+.07*wave,vn(vec2f(gx,row*1.7+floor(tm*7.))))*(1.-pow(abs(fy-.5)*2.,2.));
   let core=exp(-lx*lx*2.);
   col=mix(col,vec3f(.93,.80,.63),refl*core*.45);
-  let nearSun=smoothstep(70.,15.,dy)*smoothstep((40.+dy)*stretch,(18.+dy*.6)*stretch,abs(p.x-375.))*(.75+.25*vn(vec2f(p.x/9.,row)));
+  let nearSun=smoothstep(70.,15.,dy)*smoothstep((40.+dy)*stretch,(18.+dy*.6)*stretch,abs(p.x-u.h.x))*(.75+.25*vn(vec2f(p.x/9.,row)));
   col=mix(col,mix(vec3f(.99,.93,.82),vec3f(.753,.227,.141),nearSun*.8*smoothstep(.45,1.,u.f.z)),refl*core*dash*.85);
   // sea surface (auxiliary force = waves): perspective height field, no drawn lines
   let z=70./max(dy,1.5);                                     // distance into the scene
@@ -248,10 +248,10 @@ fn cloudBand(p:vec2f,tm:f32,k:f32,yc:f32,hh:f32)->f32{
    col=mix(col,col*.72,st*(.35+.25*wave)*clamp(dy/120.,.25,1.));          // ripple streaks (ink)
    let gl=smoothstep(.83,.9,vn(vec2f(rx*1.7,rw*2.1+floor(tm*5.))))*(1.-pow(abs(ry2-.5)*2.,2.));
    let lc=mix(vec3f(.98,.94,.86),vec3f(.9,.92,.96),night);
-   let srcK=max(refl*exp(-pow((p.x-375.)/(160.+dy*2.),2.)),moonVis*exp(-pow((p.x-380.)/(110.+dy*1.4),2.)));
+   let srcK=max(refl*exp(-pow((p.x-u.h.x)/(160.+dy*2.),2.)),moonVis*exp(-pow((p.x-u.h.y)/(110.+dy*1.4),2.)));
    col=mix(col,lc,gl*srcK*.55);}                                          // stray glints spreading from the paths
   // moon path
-  let ml=(p.x-380.)/(5.+dy*.35);
+  let ml=(p.x-u.h.y)/(5.+dy*.35);
   let md2=smoothstep(.55,.68,vn(vec2f((p.x+sway)/min(4.+dy*.15,12.)+h2(vec2f(row,7.))*9.,row*1.9+floor(tm*6.))))*(1.-pow(abs(fy-.5)*2.,2.));
   col=mix(col,vec3f(.97,.95,.89),moonVis*exp(-ml*ml)*md2*.9*clamp((HZ-moonY)/120.,.35,1.));
  }
@@ -536,7 +536,7 @@ fn cloudBand(p:vec2f,tm:f32,k:f32,yc:f32,hh:f32)->f32{
 }`;
 
 const INK=`
-struct U{a:vec4f,b:vec4f,c:vec4f,d:vec4f,e:vec4f,f:vec4f,g:vec4f};
+struct U{a:vec4f,b:vec4f,c:vec4f,d:vec4f,e:vec4f,f:vec4f,g:vec4f,h:vec4f};
 @group(0)@binding(0) var<uniform> u:U;
 @group(0)@binding(2) var src:texture_2d<f32>;
 @group(0)@binding(3) var smp:sampler;
@@ -631,7 +631,7 @@ function sealCanvas(){const c=document.createElement('canvas');c.width=112;c.hei
 /* ---------- runtime ---------- */
 const cv=document.getElementById('cv'), hud=document.getElementById('hud');
 const QS=[.5,.75,1,1.5]; let qi=QLV>=0?QLV:1, dev,ctx,pipe,ubuf,bind,fmt,running=false,lastT=0,accT=0,frames=0,measureT=0,visible=true,raf=0;
-let VEC_ON=Q.get('vec')!=='0';let sbuf,bbuf;const uData=new Float32Array(28);const SEAL_ON=Q.get('seal')!=='0'; let INK_ON=Q.get('ink')!=='0', post,postBind,sceneTex,smp,sealTex;
+let VEC_ON=Q.get('vec')!=='0';let sbuf,bbuf;const uData=new Float32Array(32);const SEAL_ON=Q.get('seal')!=='0'; let INK_ON=Q.get('ink')!=='0', post,postBind,sceneTex,smp,sealTex;
 async function init(){
  const ad=await navigator.gpu?.requestAdapter(); if(!ad) throw 0;
  dev=await ad.requestDevice();
@@ -692,7 +692,9 @@ let hudFps=0;
 /* framing: 16:10 and wider keep the design height (540) and shift right so the lighthouse clears the seal group;
    narrower boxes (down to 3:4 portrait) widen the view to ~600 design px and add sky on top (bottom stays at 540) */
 function framing(w,h){const a=w/h,t=Math.min(1,Math.max(0,(1.6-a)/(1.6-.75)));
- const Wd=a>=1.6?540*a:864+(600-864)*t, s=a>=1.6?h/540:w/Wd, cx=EMBED?545+(630-545)*t:480, oy=h/s-540;
+ const Wd=a>=1.6?540*a:864+(730-864)*t, s=a>=1.6?h/540:w/Wd, cx=EMBED?545+(565-545)*t:480, oy=h/s-540;
+ // portrait recomposition: left lighthouse + moored boats pulled right, sun/moon moved into the gap before the cape
+ uData[28]=375+(560-375)*t;uData[29]=380+(565-380)*t;uData[30]=EMBED?190*t:0;
  uData[24]=s;uData[25]=cx;uData[26]=Math.max(0,oy);
  // seal group: right edge in wide boxes; in narrow boxes it sits just left of the lighthouse and is scaled down
  const asp=a,towerL=((823-cx)*s+w/2)/w, def=asp-.03*asp-.0565, sc=a>=1.3?1:Math.max(.62,a/1.3);
